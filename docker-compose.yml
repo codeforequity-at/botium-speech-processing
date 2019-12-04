@@ -5,3 +5,8 @@ services:
       context: stt
     ports:
       - "3070:8080"
+  tts:
+    build:
+      context: tts
+    ports:
+      - "3080:59125"
