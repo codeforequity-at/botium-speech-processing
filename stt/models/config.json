@@ -1,0 +1,27 @@
+{
+  "deepspeech": {
+    "model" :"/models/output_graph.pbmm",
+    "alphabet": "/models/alphabet.txt",
+    "lm": "/models/lm.binary",
+    "trie": "/models/trie",
+    "features": {
+      "n_features": 26,
+      "n_context": 9,
+      "beam_width": 500, 
+      "lm_alpha": 0.75,
+      "lm_beta": 1.85
+    }
+  },
+  "server": {
+    "http": {
+      "host": "0.0.0.0",
+      "port": 8080,
+      "request_max_size": 1048576
+    }
+  },
+  "log": {
+    "level": [
+      { "logger": "deepspeech_server", "level": "DEBUG"}
+    ]
+  }
+}

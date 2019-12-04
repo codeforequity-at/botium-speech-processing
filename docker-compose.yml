@@ -1,0 +1,7 @@
+version: '3'
+services:
+  stt:
+    build:
+      context: stt
+    ports:
+      - "3070:8080"
