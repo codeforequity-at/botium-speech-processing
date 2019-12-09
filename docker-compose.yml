@@ -3,15 +3,15 @@ services:
   stt_en:
     build:
       context: stt
-      dockerfile: Dockerfile.en
+      dockerfile: Dockerfile.kaldi.en
     ports:
-      - "3070:8080"
+      - "3070:80"
   stt_de:
     build:
       context: stt
-      dockerfile: Dockerfile.de
+      dockerfile: Dockerfile.kaldi.de
     ports:
-      - "3071:8080"
+      - "3071:80"
   tts:
     build:
       context: tts

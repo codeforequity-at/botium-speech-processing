@@ -1,0 +1,19 @@
+FROM jcsilva/docker-kaldi-gstreamer-server
+
+RUN mkdir -p /opt/models && cd /opt/models && \
+    wget --no-check-certificate http://ltdata1.informatik.uni-hamburg.de/kaldi_tuda_de/de_400k_nnet3chain_tdnn1f_2048_sp_bi.tar.bz2 && \
+    tar -jxvf de_400k_nnet3chain_tdnn1f_2048_sp_bi.tar.bz2 && \
+    find /opt/models/ -type f | xargs sed -i 's:de_400k_nnet3chain_tdnn1f_2048_sp_bi:/opt/models/de_400k_nnet3chain_tdnn1f_2048_sp_bi:g' && \
+    sed -i 's:post-processor:#post-processor:g' /opt/models/kaldi_tuda_de_nnet3_chain2.yaml
+
+RUN apt-get update && \
+    apt-get install -y supervisor && \
+    apt-get clean autoclean && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY supervisord.kaldi.de.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord"]
