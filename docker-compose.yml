@@ -1,10 +1,17 @@
 version: '3'
 services:
-  stt:
+  stt_en:
     build:
       context: stt
+      dockerfile: Dockerfile.en
     ports:
       - "3070:8080"
+  stt_de:
+    build:
+      context: stt
+      dockerfile: Dockerfile.de
+    ports:
+      - "3071:8080"
   tts:
     build:
       context: tts

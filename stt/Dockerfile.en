@@ -4,7 +4,7 @@ RUN wget https://github.com/mozilla/DeepSpeech/releases/download/v0.5.1/deepspee
   tar xvzf deepspeech-0.5.1-models.tar.gz && mv deepspeech-0.5.1-models models && \
   rm deepspeech-0.5.1-models.tar.gz
 
-COPY ./models/* /models
+COPY ./models/config_en.json /models/config.json
 ENV config /models/config.json
 
 RUN pip3 install "deepspeech==0.5.1"
