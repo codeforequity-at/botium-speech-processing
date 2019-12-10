@@ -15,5 +15,6 @@ services:
   tts:
     build:
       context: tts
+      dockerfile: Dockerfile.marytts
     ports:
       - "3080:59125"
