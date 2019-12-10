@@ -2,11 +2,11 @@ const Mustache = require('mustache')
 const request = require('request-promise-native')
 const debug = require('debug')('botium-speech-processing-marytts')
 
-
 class MaryTTS {
   build () {
 
   }
+
   async tts ({ language, text }) {
     const envVarUrl = `BOTIUM_SPEECH_MARYTTS_URL_${language.toUpperCase()}`
     if (!process.env[envVarUrl]) throw new Error(`Environment variable ${envVarUrl} empty`)

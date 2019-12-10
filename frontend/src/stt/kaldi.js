@@ -7,6 +7,7 @@ class Kaldi {
   build () {
 
   }
+
   async stt ({ language, buffer }) {
     const envVarUrl = `BOTIUM_SPEECH_KALDI_URL_${language.toUpperCase()}`
     if (!process.env[envVarUrl]) throw new Error(`Environment variable ${envVarUrl} empty`)

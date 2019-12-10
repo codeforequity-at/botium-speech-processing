@@ -6,7 +6,7 @@
   "scripts": {
     "eslint": "eslint src/**/*.js",
     "eslint-fix": "eslint --fix src/**/*.js",
-    "start": "DOTENV_FLOW_PATH=./resources node -r dotenv-flow/config ./src/server.js",
+    "start": "DOTENV_FLOW_PATH=./resources nodemon -w ./resources/.env -w ./resources/.env.local -x \"node -r dotenv-flow/config\" ./src/server.js",
     "jsdoc": "swagger-jsdoc -d ./src/swaggerDef.json -o ./src/swagger.json src/routes.js"
   },
   "author": "Botium GmbH",
@@ -19,11 +19,13 @@
     "express-winston": "^4.0.1",
     "lodash": "^4.17.15",
     "mustache": "^3.1.0",
+    "nodemon": "^2.0.1",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8",
     "swagger-jsdoc": "^3.5.0",
     "swagger-ui-express": "^4.1.2",
-    "winston": "^3.2.1"
+    "winston": "^3.2.1",
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
     "eslint": "^6.7.2",

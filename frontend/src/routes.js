@@ -1,6 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
-const { spawn } = require('child_process')
+const { runsox } = require('./convert/sox.js')
 const debug = require('debug')('botium-speech-processing-routes')
 
 const router = express.Router()
@@ -196,7 +196,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *       - audio/*
  *     parameters:
  *       - name: profile
- *         description: Conversion profile (for example "wav")
+ *         description: Conversion profile (for example WAVTOMONOWAV, MP3TOMONOWAV)
  *         in: path
  *         required: true
  *         schema:
@@ -217,37 +217,26 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *               type: string
  *               format: binary
  */
-router.get('/api/convert/:profile', async (req, res, next) => {
+router.post('/api/convert/:profile', async (req, res, next) => {
   if (!Buffer.isBuffer(req.body)) {
     return next(new Error('req.body is not a buffer'))
   }
-
-  const envVarSox = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}`
+  const envVarSox = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_SOX`
   if (!process.env[envVarSox]) {
     return next(new Error(`Environment variable ${envVarSox} empty`))
   }
-  const cmdLineSox = process.env[envVarSox].split(' ')
+  const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
+  if (!process.env[envVarOutput]) {
+    return next(new Error(`Environment variable ${envVarOutput} empty`))
+  }
+
   try {
-    const sox = spawn(cmdLineSox[0], cmdLineSox.slice(1))
-
-    sox.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`)
-    })
-
-    sox.on('close', (code) => {
-      console.log(`sox process exited with code ${code}`)
-      res.sendStatus(200).end()
-    })
-
-    sox.stdin.write(req.body)
-
-    /*
+    const outputBuffer = await runsox(process.env[envVarSox], req.body)
     res.writeHead(200, {
-      'Content-disposition': `attachment; filename="${name}"`,
-      'Content-Length': buffer.length
+      'Content-disposition': `attachment; filename="${process.env[envVarOutput]}"`,
+      'Content-Length': outputBuffer.length
     })
-    res.end(buffer)
-    */
+    res.end(outputBuffer)
   } catch (err) {
     return next(err)
   }

@@ -1,6 +1,7 @@
-FROM node:11.10.1-alpine
+FROM ubuntu:18.04
 
-RUN apk update && apk add dos2unix bash sox
+RUN apt-get update && apt-get -y install curl gnupg && curl -sL https://deb.nodesource.com/setup_11.x  | bash - && apt-get -y install nodejs
+RUN apt-get install -y dos2unix sox libsox-fmt-mp3
 
 WORKDIR /app
 COPY . /app
