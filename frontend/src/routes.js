@@ -71,16 +71,20 @@ router.get('/api/status', (req, res) => {
  *               type: string
  */
 router.post('/api/stt/:language', async (req, res, next) => {
-  try {
-    const { text } = await stt.stt({
-      language: req.params.language,
-      buffer: req.body
-    })
-    res.json({
-      text
-    }).end()
-  } catch (err) {
-    return next(err)
+  if (Buffer.isBuffer(req.body)) {
+    try {
+      const { text } = await stt.stt({
+        language: req.params.language,
+        buffer: req.body
+      })
+      res.json({
+        text
+      }).end()
+    } catch (err) {
+      return next(err)
+    }
+  } else {
+    next(new Error('req.body is not a buffer'))
   }
 })
 

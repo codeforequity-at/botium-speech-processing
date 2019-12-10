@@ -28,14 +28,18 @@ class Kaldi {
     if (response.statusCode === 200) {
       const body = JSON.parse(response.body)
       debug(`Called url ${requestOptions.uri} success: ${util.inspect(body)}`)
-      if (body.hypotheses && body.hypotheses[0].utterance) {
-        return {
-          text: body.hypotheses[0].utterance
+      if (body.status === 0) {
+        if (body.hypotheses && body.hypotheses[0].utterance) {
+          return {
+            text: body.hypotheses[0].utterance
+          }
+        } else {
+          return {
+            text: ''
+          }
         }
       } else {
-        return {
-          text: ''
-        }
+        throw new Error(`Kaldi failed with code ${body.status}: ${body.message}`)
       }
     } else {
       throw new Error(`Calling url ${requestOptions.uri} failed with code ${response.statusCode}: ${response.statusMessage}`)

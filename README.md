@@ -1,0 +1,55 @@
+# Botium Speech Processing
+
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+
+Botium Speech Processing is a unified, developer-friendly API to various Speech-To-Text and Text-To-Speech services.
+
+## Software and Hardware Requirements
+
+* Several gigs of RAM and 20GB free HD space
+* Internet connectivity
+* [docker](https://docs.docker.com/)
+* [docker-compose](https://docs.docker.com/compose/)
+
+## Installation
+
+Clone or download this repository and start with docker-compose:
+
+    > docker-compose up -d
+
+This will take some time to build.
+
+Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
+
+## Configuration
+
+This repository includes a reasonable default configuration:
+
+* Use MaryTTS for TTS
+* Use Kaldi for STT
+
+Configuration changes with [environment variables](./blob/master/frontend/resources/.env).
+
+## API Definition
+
+See [swagger.json](./blob/master/frontend/src/swagger.json):
+
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text
+
+    > curl -X POST "http://127.0.0.1/api/stt/en" -H "Content-Type: audio/wav" -T sample.wav
+
+* HTTP GET to **/api/tts/{language}?text=...** for Speech-To-Text
+
+    > curl -X GET "http://127.0.0.1/api/tts/en?text=hello%20world" -o tts.wav
+
+## Big Thanks
+
+This project is standing on the shoulders of giants.
+
+* **[Kaldi GStreamer server](https://github.com/alumae/kaldi-gstreamer-server)** and **[Docker images](https://github.com/jcsilva/docker-kaldi-gstreamer-server)**
+* **[MaryTTS](http://mary.dfki.de/)**
+* **[Kaldi](https://kaldi-asr.org/)**
+* **[Kaldi Tuda Recipe](https://github.com/uhh-lt/kaldi-tuda-de)**
+* **[Deepspeech](https://github.com/mozilla/DeepSpeech)** and **[Deepspeech German](https://github.com/AASHISHAG/deepspeech-german)**
+
+
