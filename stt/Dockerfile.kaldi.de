@@ -1,5 +1,6 @@
 FROM jcsilva/docker-kaldi-gstreamer-server
 
+# https://github.com/uhh-lt/kaldi-tuda-de
 RUN mkdir -p /opt/models && cd /opt/models && \
     wget --no-check-certificate http://ltdata1.informatik.uni-hamburg.de/kaldi_tuda_de/de_400k_nnet3chain_tdnn1f_2048_sp_bi.tar.bz2 && \
     tar -jxvf de_400k_nnet3chain_tdnn1f_2048_sp_bi.tar.bz2 && \
