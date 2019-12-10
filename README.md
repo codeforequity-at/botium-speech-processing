@@ -27,6 +27,7 @@ This repository includes a reasonable default configuration:
 
 * Use MaryTTS for TTS
 * Use Kaldi for STT
+* Use SoX for audio file conversion
 
 Configuration changes with [environment variables](./blob/master/frontend/resources/.env).
 
@@ -42,6 +43,10 @@ See [swagger.json](./blob/master/frontend/src/swagger.json):
 
     > curl -X GET "http://127.0.0.1/api/tts/en?text=hello%20world" -o tts.wav
 
+* HTTP POST to **/api/convert/{profile}** for audio file conversion
+
+    > curl -X POST "http://127.0.0.1/api/convert/mp3tomonowav" -H "Content-Type: audio/mp3" -T sample.mp3 -o sample.wav
+
 ## Big Thanks
 
 This project is standing on the shoulders of giants.
@@ -51,5 +56,6 @@ This project is standing on the shoulders of giants.
 * **[Kaldi](https://kaldi-asr.org/)**
 * **[Kaldi Tuda Recipe](https://github.com/uhh-lt/kaldi-tuda-de)**
 * **[Deepspeech](https://github.com/mozilla/DeepSpeech)** and **[Deepspeech German](https://github.com/AASHISHAG/deepspeech-german)**
+* **[SoX](http://sox.sourceforge.net/)**
 
 
