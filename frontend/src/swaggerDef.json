@@ -1,0 +1,10 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Botium Speech Processing API",
+      "version": "1.0.0",
+      "description": "Botium Speech Processing API"
+    },
+    "basePath": "/"
+  }
+  

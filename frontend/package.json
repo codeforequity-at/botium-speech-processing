@@ -1,0 +1,34 @@
+{
+  "name": "botium-speech-processing-frontend",
+  "version": "1.0.0",
+  "description": "Unified Speech Processing",
+  "main": "index.js",
+  "scripts": {
+    "eslint": "eslint src/**/*.js",
+    "eslint-fix": "eslint --fix src/**/*.js",
+    "start": "DOTENV_FLOW_PATH=./resources node -r dotenv-flow/config ./src/server.js",
+    "jsdoc": "swagger-jsdoc -d ./src/swaggerDef.json -o ./src/swagger.json src/routes.js"
+  },
+  "author": "Botium GmbH",
+  "license": "MIT",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "debug": "^4.1.1",
+    "dotenv-flow": "^3.1.0",
+    "express": "^4.17.1",
+    "lodash": "^4.17.15",
+    "mustache": "^3.1.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.8",
+    "swagger-jsdoc": "^3.5.0",
+    "swagger-ui-express": "^4.1.2"
+  },
+  "devDependencies": {
+    "eslint": "^6.7.2",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "^2.19.1",
+    "eslint-plugin-node": "^10.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
+  }
+}

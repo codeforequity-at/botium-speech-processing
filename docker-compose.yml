@@ -1,20 +1,30 @@
 version: '3'
 services:
+  nginx:
+    image: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+  frontend:
+    build:
+      context: frontend
+    restart: always
+    volumes:
+      - "./frontend/resources:/app/resources"
   stt_en:
     build:
       context: stt
       dockerfile: Dockerfile.kaldi.en
-    ports:
-      - "3070:80"
+    restart: always
   stt_de:
     build:
       context: stt
       dockerfile: Dockerfile.kaldi.de
-    ports:
-      - "3071:80"
+    restart: always
   tts:
     build:
       context: tts
       dockerfile: Dockerfile.marytts
-    ports:
-      - "3080:59125"
+    restart: always

@@ -1,0 +1,143 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Botium Speech Processing API",
+    "version": "1.0.0",
+    "description": "Botium Speech Processing API"
+  },
+  "basePath": "/",
+  "paths": {
+    "/api/status": {
+      "get": {
+        "description": "Returns Botium Speech Processing Status",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Botium Speech Processing Status",
+            "schema": {
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "OK",
+                    "UNAVAILABLE"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stt/{language}": {
+      "post": {
+        "description": "Convert audio file to text",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "language",
+            "description": "ISO-639-1 language code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Audio file",
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Extracted text",
+            "schema": {
+              "properties": {
+                "text": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts/{language}": {
+      "get": {
+        "description": "Convert text file to audio",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "audio/wav"
+        ],
+        "parameters": [
+          {
+            "name": "language",
+            "description": "ISO-639-1 language code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "text",
+            "description": "Text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audio file",
+            "content": {
+              "audio/wav": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "BOTIUM_API_TOKEN"
+      }
+    }
+  },
+  "tags": []
+}
