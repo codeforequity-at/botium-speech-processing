@@ -19,7 +19,6 @@ class MaryTTS {
       simple: false
     }
 
-
     let response
     try {
       response = await request(requestOptions)

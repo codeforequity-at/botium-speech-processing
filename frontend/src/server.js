@@ -1,5 +1,7 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const expressWinston = require('express-winston')
+const winston = require('winston')
 const swaggerUi = require('swagger-ui-express')
 const debug = require('debug')('botium-speech-processing-server')
 
@@ -15,8 +17,20 @@ if (apiTokens.length === 0) {
 
 app.use(bodyParser.json())
 app.use(bodyParser.text())
-app.use(bodyParser.raw({ type: 'audio/*', limit: '2mb' }))
+app.use(bodyParser.raw({ type: 'audio/*', limit: process.env.BOTIUM_SPEECH_UPLOAD_LIMIT }))
 app.use(bodyParser.urlencoded({ extended: false }))
+if (debug.enabled) {
+  app.use(expressWinston.logger({
+    transports: [
+      new winston.transports.Console()
+    ],
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    ),
+    meta: false
+  }))
+}
 
 app.use('/api/*', (req, res, next) => {
   const clientApiToken = req.headers.BOTIUM_API_TOKEN || req.headers.botium_api_token || req.query.BOTIUM_API_TOKEN || req.query.botium_api_token || req.body.BOTIUM_API_TOKEN || req.body.botium_api_token
