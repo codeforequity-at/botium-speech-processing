@@ -41,7 +41,7 @@ Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testi
 
 ## API Definition
 
-See [swagger.json](./blob/master/frontend/src/swagger.json):
+See [swagger.json](./frontend/src/swagger.json):
 
 * HTTP POST to **/api/stt/{language}** for Speech-To-Text
 
