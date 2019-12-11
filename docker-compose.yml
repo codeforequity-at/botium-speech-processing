@@ -28,3 +28,7 @@ services:
       context: tts
       dockerfile: Dockerfile.marytts
     restart: always
+  dictate:
+    build:
+      context: dictate
+    restart: always

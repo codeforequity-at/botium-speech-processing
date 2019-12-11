@@ -2,7 +2,6 @@
   "name": "botium-speech-processing-frontend",
   "version": "1.0.0",
   "description": "Unified Speech Processing",
-  "main": "index.js",
   "scripts": {
     "eslint": "eslint src/**/*.js",
     "eslint-fix": "eslint --fix src/**/*.js",

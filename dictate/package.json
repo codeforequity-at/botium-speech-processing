@@ -1,0 +1,13 @@
+{
+  "name": "botium-speech-processing-dictate",
+  "version": "1.0.0",
+  "description": "Unified Speech Processing",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Botium GmbH",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
