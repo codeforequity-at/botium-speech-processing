@@ -47,7 +47,7 @@ See [swagger.json](./frontend/src/swagger.json):
 
     > curl -X POST "http://127.0.0.1/api/stt/en" -H "Content-Type: audio/wav" -T sample.wav
 
-* HTTP GET to **/api/tts/{language}?text=...** for Speech-To-Text
+* HTTP GET to **/api/tts/{language}?text=...** for Text-To-Speech
 
     > curl -X GET "http://127.0.0.1/api/tts/en?text=hello%20world" -o tts.wav
 
