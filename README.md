@@ -31,6 +31,12 @@ This repository includes a reasonable default configuration:
 
 Configuration changes with [environment variables](./blob/master/frontend/resources/.env).
 
+## Testing
+
+Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition.
+
+Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
+
 ## API Definition
 
 See [swagger.json](./blob/master/frontend/src/swagger.json):
@@ -57,5 +63,6 @@ This project is standing on the shoulders of giants.
 * **[Kaldi Tuda Recipe](https://github.com/uhh-lt/kaldi-tuda-de)**
 * **[Deepspeech](https://github.com/mozilla/DeepSpeech)** and **[Deepspeech German](https://github.com/AASHISHAG/deepspeech-german)**
 * **[SoX](http://sox.sourceforge.net/)**
+* **[dictate.js](https://github.com/Kaljurand/dictate.js)**
 
 
