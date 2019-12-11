@@ -33,7 +33,9 @@ Configuration changes with [environment variables](./blob/master/frontend/resour
 
 ## Testing
 
-Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition.
+Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition. 
+
+_Attention: in Google Chrome this only works with services published as HTTPS, you will have to take of this yourself. For example, you could publish it via ngrok tunnel._
 
 Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
 
