@@ -31,6 +31,10 @@ This repository includes a reasonable default configuration:
 
 Configuration changes with [environment variables](./blob/master/frontend/resources/.env).
 
+## Securing the API
+
+The environment variable _BOTIUM_API_TOKENS_ contains a list of valid API Tokens accepted by the server (separated by whitespace or comma). The HTTP Header _BOTIUM_API_TOKEN_ is validated on each call to the API.
+
 ## Testing
 
 Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition. 

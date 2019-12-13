@@ -143,7 +143,7 @@
         "parameters": [
           {
             "name": "profile",
-            "description": "Conversion profile (for example \"wav\")",
+            "description": "Conversion profile (for example WAVTOMONOWAV, MP3TOMONOWAV)",
             "in": "path",
             "required": true,
             "schema": {

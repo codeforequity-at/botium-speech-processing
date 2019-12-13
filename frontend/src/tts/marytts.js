@@ -13,7 +13,10 @@ class MaryTTS {
 
     const requestOptions = {
       method: 'GET',
-      uri: Mustache.render(process.env[envVarUrl], { language, text }),
+      uri: Mustache.render(process.env[envVarUrl], {
+        language: encodeURIComponent(language),
+        text: encodeURIComponent(text)
+      }),
       encoding: null,
       resolveWithFullResponse: true,
       simple: false
