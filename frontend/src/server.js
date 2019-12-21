@@ -71,4 +71,3 @@ app.listen(port, function () {
   console.log('Swagger UI available at /')
   console.log('Swagger definition available at /swagger.json')
 })
-

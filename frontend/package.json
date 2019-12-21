@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Unified Speech Processing",
   "scripts": {
-    "eslint": "eslint src/**/*.js",
-    "eslint-fix": "eslint --fix src/**/*.js",
-    "start": "DOTENV_FLOW_PATH=./resources nodemon -w ./resources/.env -w ./resources/.env.local -x \"node -r dotenv-flow/config\" ./src/server.js",
+    "eslint": "eslint src",
+    "eslint-fix": "eslint --fix src",
+    "start": "DOTENV_FLOW_PATH=./resources nodemon -w ./resources/.env -w ./resources/.env.local -w ./src/ -x \"node -r dotenv-flow/config\" ./src/server.js",
     "jsdoc": "swagger-jsdoc -d ./src/swaggerDef.json -o ./src/swagger.json src/routes.js"
   },
   "author": "Botium GmbH",
@@ -17,14 +17,15 @@
     "express": "^4.17.1",
     "express-winston": "^4.0.1",
     "lodash": "^4.17.15",
+    "mkdirp": "^0.5.1",
     "mustache": "^3.1.0",
     "nodemon": "^2.0.1",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8",
     "swagger-jsdoc": "^3.5.0",
     "swagger-ui-express": "^4.1.2",
-    "winston": "^3.2.1",
-    "uuid": "^3.3.3"
+    "uuid": "^3.3.3",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "eslint": "^6.7.2",
