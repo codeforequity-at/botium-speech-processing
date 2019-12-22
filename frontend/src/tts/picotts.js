@@ -9,16 +9,16 @@ class PicoTTS {
   }
 
   async tts ({ language, text }) {
-    const envVarCmd = `BOTIUM_SPEECH_PICO_${language.toUpperCase()}`
+    const envVarCmd = `BOTIUM_SPEECH_PICO_CMDPREFIX_${language.toUpperCase()}`
     if (!process.env[envVarCmd]) throw new Error(`Environment variable ${envVarCmd} empty`)
 
     return new Promise((resolve, reject) => {
       const output = `/tmp/${uuidv1()}.wav`
 
-      const cmdLinePico = Mustache.render(process.env[envVarCmd], { output, text })
+      const cmdLinePico = Mustache.render(process.env[envVarCmd], { output })
       debug(`cmdLinePico: ${cmdLinePico}`)
       const cmdLinePicoParts = cmdLinePico.split(' ')
-      const pico = spawn(cmdLinePicoParts[0], cmdLinePicoParts.slice(1))
+      const pico = spawn(cmdLinePicoParts[0], cmdLinePicoParts.slice(1).concat([text]))
 
       pico.once('exit', (code, signal) => {
         debug(`pico2wave process exited with code ${code}, signal ${signal}`)
