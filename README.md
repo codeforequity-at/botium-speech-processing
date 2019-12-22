@@ -29,7 +29,9 @@ This repository includes a reasonable default configuration:
 * Use Kaldi for STT
 * Use SoX for audio file conversion
 
-Configuration changes with [environment variables](./blob/master/frontend/resources/.env).
+Configuration changes with [environment variables](./blob/master/frontend/resources/.env). See comments in this file.
+
+**Recommendation:** Do not change the _.env_ file but create a _.env.local_ file to overwrite the default settings. This will prevent troubles on future _git pull_
 
 ## Securing the API
 
@@ -65,10 +67,9 @@ This project is standing on the shoulders of giants.
 
 * **[Kaldi GStreamer server](https://github.com/alumae/kaldi-gstreamer-server)** and **[Docker images](https://github.com/jcsilva/docker-kaldi-gstreamer-server)**
 * **[MaryTTS](http://mary.dfki.de/)**
+* **SVOX Pico Text-to-Speech**
 * **[Kaldi](https://kaldi-asr.org/)**
 * **[Kaldi Tuda Recipe](https://github.com/uhh-lt/kaldi-tuda-de)**
 * **[Deepspeech](https://github.com/mozilla/DeepSpeech)** and **[Deepspeech German](https://github.com/AASHISHAG/deepspeech-german)**
 * **[SoX](http://sox.sourceforge.net/)**
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
-
-
