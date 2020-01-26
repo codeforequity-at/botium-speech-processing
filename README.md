@@ -2,16 +2,39 @@
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-Botium Speech Processing is a unified, developer-friendly API to various Speech-To-Text and Text-To-Speech services.
+Botium Speech Processing is a unified, developer-friendly API to the best available Speech-To-Text and Text-To-Speech services.
 
-## Software and Hardware Requirements
+## What is it ?
 
-* Several gigs of RAM and 20GB free HD space
+This is a *get-shit-done*-style collection of the best free and Open Source speech recognition products, the configuration options are rudimentary: it is *highly opinionated* about the included tools, just get the shit done.
+
+* With [Kaldi](https://kaldi-asr.org/) a reasonable speech recogniction performance is available with freely available data sources. 
+* [MaryTTS](http://mary.dfki.de/) is currently the best freely available speech synthesis software
+* [SoX](http://sox.sourceforge.net/) is the _swiss army-knife_ for audio file processing
+
+While the included tools in most cases cannot compete with the big cloud-based products, for lots of applications the trade-off between price and quality is at least reasonable.
+
+**Read about the project history [here](https://chatbotslife.com/full-blown-open-source-speech-processing-server-available-on-github-4fb88a54d338)**
+
+### Possible Applications
+
+Some examples what you can do with this:
+
+* Synthesize audio tracks for Youtube tutorials
+* Build voice-enabled chatbot services (for example, IVR systems)
+* Classification of audio file transcriptions
+* [Automated Testing](https://chatbotslife.com/testing-alexa-skills-with-avs-mocha-and-botium-f6c22549f66e) of Voice services with [Botium](https://medium.com/@floriantreml/botium-in-a-nutshell-part-1-overview-f8d0ceaf8fb4)
+
+## Installation
+
+### Software and Hardware Requirements
+
+* Several gigs of RAM and 40GB free HD space
 * Internet connectivity
 * [docker](https://docs.docker.com/)
 * [docker-compose](https://docs.docker.com/compose/)
 
-## Installation
+### Build Docker Containers
 
 Clone or download this repository and start with docker-compose:
 
@@ -21,7 +44,7 @@ This will take some time to build.
 
 Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
 
-## Configuration
+### Configuration
 
 This repository includes a reasonable default configuration:
 
@@ -33,11 +56,11 @@ Configuration changes with [environment variables](./frontend/resources/.env). S
 
 **Recommendation:** Do not change the _.env_ file but create a _.env.local_ file to overwrite the default settings. This will prevent troubles on future _git pull_
 
-## Securing the API
+### Securing the API
 
 The environment variable _BOTIUM_API_TOKENS_ contains a list of valid API Tokens accepted by the server (separated by whitespace or comma). The HTTP Header _BOTIUM_API_TOKEN_ is validated on each call to the API.
 
-## Testing
+### Testing
 
 Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition. 
 
@@ -60,6 +83,12 @@ See [swagger.json](./frontend/src/swagger.json):
 * HTTP POST to **/api/convert/{profile}** for audio file conversion
 
     > curl -X POST "http://127.0.0.1/api/convert/mp3tomonowav" -H "Content-Type: audio/mp3" -T sample.mp3 -o sample.wav
+
+## Contributing
+
+_To be done: contribution guidelines._
+
+We are open to any kind of contributions and are happy to discuss, review and merge pull requests.
 
 ## Big Thanks
 
