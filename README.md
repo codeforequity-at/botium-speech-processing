@@ -29,7 +29,7 @@ This repository includes a reasonable default configuration:
 * Use Kaldi for STT
 * Use SoX for audio file conversion
 
-Configuration changes with [environment variables](./blob/master/frontend/resources/.env). See comments in this file.
+Configuration changes with [environment variables](./frontend/resources/.env). See comments in this file.
 
 **Recommendation:** Do not change the _.env_ file but create a _.env.local_ file to overwrite the default settings. This will prevent troubles on future _git pull_
 
