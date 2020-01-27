@@ -29,10 +29,12 @@ Some examples what you can do with this:
 
 ### Software and Hardware Requirements
 
-* Several gigs of RAM and 40GB free HD space
+* 8GB of RAM (accessible for Docker) and 20GB free HD space
 * Internet connectivity
 * [docker](https://docs.docker.com/)
 * [docker-compose](https://docs.docker.com/compose/)
+
+_Note: memory usage can be reduced if only one language is required - default configuration comes with two languages._
 
 ### Build Docker Containers
 
@@ -51,6 +53,9 @@ This repository includes a reasonable default configuration:
 * Use MaryTTS for TTS
 * Use Kaldi for STT
 * Use SoX for audio file conversion
+* Languages included:
+  * German
+  * English
 
 Configuration changes with [environment variables](./frontend/resources/.env). See comments in this file.
 
@@ -60,13 +65,24 @@ Configuration changes with [environment variables](./frontend/resources/.env). S
 
 The environment variable _BOTIUM_API_TOKENS_ contains a list of valid API Tokens accepted by the server (separated by whitespace or comma). The HTTP Header _BOTIUM_API_TOKEN_ is validated on each call to the API.
 
-### Testing
+## Testing
+
+Point your browser to http://127.0.0.1/ to open Swagger UI to try out the API.
 
 Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition. 
 
 _Attention: in Google Chrome this only works with services published as HTTPS, you will have to take of this yourself. For example, you could publish it via ngrok tunnel._
 
 Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
+
+## Real Time API
+
+There are Websocket endpoints exposed for real-time audio decoding. Find the API description in the [Kaldi GStreamer Server documentation](https://github.com/alumae/kaldi-gstreamer-server#websocket-based-client-server-protocol).
+
+The Websocket endpoints are:
+
+* English: ws://127.0.0.1/stt_en/client/ws/speech
+* German: ws://127.0.0.1/stt_de/client/ws/speech
 
 ## API Definition
 
