@@ -11,6 +11,7 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
+COPY models/zamia_20190609_tdnn_fl_en.yaml /opt/models/zamia_20190609_tdnn_fl_en.yaml
 COPY supervisord.kaldi.en.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
