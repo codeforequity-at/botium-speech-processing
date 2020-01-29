@@ -1,11 +1,9 @@
 FROM jcsilva/docker-kaldi-gstreamer-server
 
-# https://github.com/uhh-lt/kaldi-tuda-de
 RUN mkdir -p /opt/models && cd /opt/models && \
-    wget --no-check-certificate http://ltdata1.informatik.uni-hamburg.de/kaldi_tuda_de/de_400k_nnet3chain_tdnn1f_2048_sp_bi.tar.bz2 && \
-    tar -jxvf de_400k_nnet3chain_tdnn1f_2048_sp_bi.tar.bz2 && \
-    find /opt/models/ -type f | xargs sed -i 's:de_400k_nnet3chain_tdnn1f_2048_sp_bi:/opt/models/de_400k_nnet3chain_tdnn1f_2048_sp_bi:g' && \
-    sed -i 's:post-processor:#post-processor:g' /opt/models/kaldi_tuda_de_nnet3_chain2.yaml
+    wget --no-check-certificate https://goofy.zamia.org/zamia-speech/asr-models/kaldi-generic-de-tdnn_f-r20190328.tar.xz && \
+    tar xvJf kaldi-generic-de-tdnn_f-r20190328.tar.xz && \
+    find /opt/models/ -type f | xargs sed -i 's:exp/nnet3_chain:/opt/models/kaldi-generic-de-tdnn_f-r20190328:g'
 
 RUN apt-get update && \
     apt-get install -y supervisor && \
@@ -13,6 +11,7 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
+COPY models/zamia_20190328_tdnn_f_de.yaml /opt/models/zamia_20190328_tdnn_f_de.yaml
 COPY supervisord.kaldi.de.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
