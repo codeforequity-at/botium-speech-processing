@@ -8,7 +8,7 @@ Botium Speech Processing is a unified, developer-friendly API to the best availa
 
 ## What is it ?
 
-This is a *get-shit-done*-style collection of the best free and Open Source speech recognition products, the configuration options are rudimentary: it is *highly opinionated* about the included tools, just get the shit done.
+Botium Speech Processing is a *get-shit-done*-style Open-Source software stack, the configuration options are rudimentary: it is highly opinionated about the included tools, just get the shit done.
 
 * With [Kaldi](https://kaldi-asr.org/) a reasonable speech recogniction performance is available with freely available data sources. 
 * [MaryTTS](http://mary.dfki.de/) is currently the best freely available speech synthesis software
