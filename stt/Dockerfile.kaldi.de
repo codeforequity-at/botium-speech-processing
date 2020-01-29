@@ -3,7 +3,7 @@ FROM jcsilva/docker-kaldi-gstreamer-server
 RUN mkdir -p /opt/models && cd /opt/models && \
     wget --no-check-certificate https://goofy.zamia.org/zamia-speech/asr-models/kaldi-generic-de-tdnn_f-r20190328.tar.xz && \
     tar xvJf kaldi-generic-de-tdnn_f-r20190328.tar.xz && \
-    find /opt/models/ -type f | xargs sed -i 's:exp/nnet3_chain:/opt/models/kaldi-generic-de-tdnn_f-r20190328:g'
+    sed -i 's:exp/nnet3_chain:/opt/models/kaldi-generic-de-tdnn_f-r20190328:g' /opt/models/kaldi-generic-de-tdnn_f-r20190328/ivectors_test_hires/conf/ivector_extractor.conf
 
 RUN apt-get update && \
     apt-get install -y supervisor && \
