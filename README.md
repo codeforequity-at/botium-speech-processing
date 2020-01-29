@@ -4,7 +4,7 @@
 [![pullrequests](https://img.shields.io/badge/PR-welcome-green.svg)]()
 [![awesome](https://img.shields.io/badge/Awesome-for%20sure!-green.svg)]()
 
-Botium Speech Processing is a unified, developer-friendly API to the best available Speech-To-Text and Text-To-Speech services.
+Botium Speech Processing is a unified, developer-friendly API to the best available free and Open-Source Speech-To-Text and Text-To-Speech services.
 
 ## What is it ?
 
