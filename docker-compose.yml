@@ -13,6 +13,12 @@ services:
     restart: always
     volumes:
       - "./frontend/resources:/app/resources"
+  watcher:
+    build:
+      context: watcher
+    restart: always
+    volumes:
+      - "./watch:/app/watch"
   stt_en:
     build:
       context: stt
