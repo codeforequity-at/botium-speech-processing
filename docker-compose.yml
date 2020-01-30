@@ -26,7 +26,7 @@ services:
       dockerfile: Dockerfile.kaldi.de
     restart: always
     volumes:
-      - "./frontend/resources/logs/stt_en:/opt/logs"
+      - "./frontend/resources/logs/stt_de:/opt/logs"
   tts:
     build:
       context: tts
