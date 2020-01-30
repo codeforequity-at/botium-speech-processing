@@ -1,4 +1,4 @@
-FROM jcsilva/docker-kaldi-gstreamer-server
+FROM botium/kaldi-gstreamer-server:latest
 
 RUN mkdir -p /opt/models && cd /opt/models && \
     wget --no-check-certificate https://goofy.zamia.org/zamia-speech/asr-models/kaldi-generic-en-tdnn_fl-r20190609.tar.xz && \

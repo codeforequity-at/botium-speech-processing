@@ -117,6 +117,7 @@ This project is standing on the shoulders of giants.
 * **SVOX Pico Text-to-Speech**
 * **[Kaldi](https://kaldi-asr.org/)**
 * **[Kaldi Tuda Recipe](https://github.com/uhh-lt/kaldi-tuda-de)**
+* **[Zamia Speech](https://github.com/gooofy/zamia-speech)**
 * **[Deepspeech](https://github.com/mozilla/DeepSpeech)** and **[Deepspeech German](https://github.com/AASHISHAG/deepspeech-german)**
 * **[SoX](http://sox.sourceforge.net/)**
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
