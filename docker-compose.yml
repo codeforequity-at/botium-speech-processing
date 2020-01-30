@@ -18,11 +18,15 @@ services:
       context: stt
       dockerfile: Dockerfile.kaldi.en
     restart: always
+    volumes:
+      - "./frontend/resources/logs/stt_en:/opt/logs"
   stt_de:
     build:
       context: stt
       dockerfile: Dockerfile.kaldi.de
     restart: always
+    volumes:
+      - "./frontend/resources/logs/stt_en:/opt/logs"
   tts:
     build:
       context: tts
