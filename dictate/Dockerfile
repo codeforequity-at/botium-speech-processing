@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:latest-alpine
 
 RUN apk update && apk add dos2unix bash curl
 
