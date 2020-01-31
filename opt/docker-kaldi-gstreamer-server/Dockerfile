@@ -49,7 +49,7 @@ RUN cd /opt/kaldi/tools && make -j $(nproc)
 RUN cd /opt/kaldi/tools && ./extras/install_portaudio.sh
 RUN cd /opt/kaldi/tools && ./extras/install_openblas.sh
 RUN cd /opt/kaldi/src && ./configure --shared --mathlib=OPENBLAS
-RUN cd /opt/kaldi/src && make ext && make depend -j$(nproc) && make -j$(nproc)
+RUN cd /opt/kaldi/src && make ext -j$(nproc) && make depend -j$(nproc) && make -j$(nproc)
 RUN cd /opt/kaldi/src/online && make depend -j $(nproc) && make -j $(nproc)
 RUN cd /opt/kaldi/src/gst-plugin && make depend -j $(nproc) && make -j $(nproc)
 RUN git clone --depth 1 https://github.com/alumae/gst-kaldi-nnet2-online.git
