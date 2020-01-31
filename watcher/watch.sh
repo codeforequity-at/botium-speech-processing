@@ -14,23 +14,26 @@ inotifywait -m /app/watch/stt_input_de /app/watch/stt_input_en -e create |
     fi
     if [[ "$file" =~ .*mp3$ ]]; then
       profile=mp3tomonowav
+      contenttype=audio/mp3
     elif [[ "$file" =~ .*wav$ ]]; then
       profile=wavtomonowav
+      contenttype=audio/wav
     else
-      mv $path$file /app/watch/stt_output/$file.err_filetype_not_supported
+      mv -f $path$file /app/watch/stt_output/$file.err_filetype_not_supported
       continue
     fi
-    curl -X POST "http://frontend/api/convert/$profile" -H "Content-Type: audio/mp3" -T /app/watch/stt_output/$file -o /app/watch/temp/$file.wav
+    curl -X POST "http://frontend/api/convert/$profile" -H "Content-Type: $contenttype" -T /app/watch/stt_output/$file -o /app/watch/temp/$file.wav
     if [ $? -ne 0 ]; then
-      mv $path$file /app/watch/stt_output/$file.err_convert
+      mv -f $path$file /app/watch/stt_output/$file.err_convert
       rm -f /app/watch/temp/$file.wav
       continue
     fi
     curl -X POST "http://frontend/api/stt/$language" -H "Content-Type: audio/wav" -T /app/watch/temp/$file.wav | jq -r .text > /app/watch/stt_output/$file.txt
     if [ $? -ne 0 ]; then
-      mv $path$file /app/watch/stt_output/$file.err_stt
+      mv -f $path$file /app/watch/stt_output/$file.err_stt
       rm -f /app/watch/temp/$file.wav
       continue
     fi
-    mv $path$file /app/watch/stt_output/$file
+    mv -f $path$file /app/watch/stt_output/$file
+    rm -f /app/watch/temp/$file.wav
   done
