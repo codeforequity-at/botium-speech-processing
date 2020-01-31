@@ -3,8 +3,8 @@ decoder:
     nnet-mode: 3
     use-threaded-decoder: True
     model : /opt/models/kaldi-generic-de-tdnn_f-r20190328/model/final.mdl
-    word-syms : /opt/models/kaldi-generic-de-tdnn_f-r20190328/graph/words.txt
-    fst : /opt/models/kaldi-generic-de-tdnn_f-r20190328/graph/HCLG.fst
+    word-syms : /opt/models/kaldi-generic-de-tdnn_f-r20190328/model/graph/words.txt
+    fst : /opt/models/kaldi-generic-de-tdnn_f-r20190328/model/graph/HCLG.fst
     mfcc-config : /opt/models/kaldi-generic-de-tdnn_f-r20190328/conf/mfcc_hires.conf
     frame-subsampling-factor: 3
     ivector-extraction-config : /opt/models/kaldi-generic-de-tdnn_f-r20190328/ivectors_test_hires/conf/ivector_extractor.conf
@@ -17,7 +17,7 @@ decoder:
     traceback-period-in-secs: 0.25
     chunk-length-in-secs: 0.25
     num-nbest: 10
-    phone-syms: /opt/models/kaldi-generic-de-tdnn_f-r20190328/graph/phones.txt
+    phone-syms: /opt/models/kaldi-generic-de-tdnn_f-r20190328/model/graph/phones.txt
 out-dir: tmp
 
 use-vad: False

@@ -38,7 +38,8 @@ RUN apt-get update && apt-get install -y  \
     apt-get clean autoclean && \
     apt-get autoremove -y && \
     pip install ws4py==0.3.2 && \
-    pip install tornado
+    pip install tornado==4.2 && \
+    pip install futures
 
 WORKDIR /opt
 
