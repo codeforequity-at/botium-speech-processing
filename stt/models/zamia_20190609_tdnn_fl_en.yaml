@@ -1,0 +1,40 @@
+use-nnet2: True
+decoder:
+    nnet-mode: 3
+    use-threaded-decoder: True
+    model : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/final.mdl
+    word-syms : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/graph/words.txt
+    fst : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/graph/HCLG.fst
+    mfcc-config : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/conf/mfcc_hires.conf
+    frame-subsampling-factor: 3
+    ivector-extraction-config : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/ivectors_test_hires/conf/ivector_extractor.conf
+    max-active: 10000
+    beam: 5.0
+    lattice-beam: 5.0
+    acoustic-scale: 1.0 #0.083
+    do-endpointing : true
+    endpoint-silence-phones : "1:2:3:4:5:6"
+    traceback-period-in-secs: 0.25
+    chunk-length-in-secs: 0.25
+    num-nbest: 10
+    phone-syms: /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/graph/phones.txt
+out-dir: tmp
+
+use-vad: False
+silence-timeout: 15
+
+logging:
+    version : 1
+    disable_existing_loggers: False
+    formatters:
+        simpleFormater:
+            format: '%(asctime)s - %(levelname)7s: %(name)10s: %(message)s'
+            datefmt: '%Y-%m-%d %H:%M:%S'
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: simpleFormater
+            level: DEBUG
+    root:
+        level: DEBUG
+        handlers: [console]

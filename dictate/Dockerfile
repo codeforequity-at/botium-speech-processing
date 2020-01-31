@@ -1,4 +1,4 @@
-FROM node:11.10.1-alpine
+FROM node:lts-alpine
 
 RUN apk update && apk add dos2unix bash curl
 
