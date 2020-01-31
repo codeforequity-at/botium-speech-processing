@@ -15,7 +15,7 @@ inotifywait -m /app/watch/tts_input_de /app/watch/tts_input_en -e close_write |
       continue
     fi
     text=$(cat $path$file)
-    curl -s -S -X POST "http://frontend:56000/api/tts/$language" --data-urlencode "text=$text" -o /app/watch/tts_output/$file.wav
+    curl -s -S -X GET "http://frontend:56000/api/tts/$language" --data-urlencode "text=$text" -o /app/watch/tts_output/$file.wav
     if [ $? -ne 0 ]; then
       mv -f $path$file /app/watch/tts_output/$file.err_tts
       continue
