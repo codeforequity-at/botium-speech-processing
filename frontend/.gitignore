@@ -2,4 +2,3 @@ node_modules
 package-lock.json
 *.local
 resources/.cache
-resources/logs
