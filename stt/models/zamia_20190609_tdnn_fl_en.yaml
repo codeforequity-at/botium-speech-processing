@@ -4,7 +4,7 @@ decoder:
     use-threaded-decoder: True
     model : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/final.mdl
     word-syms : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/graph/words.txt
-    fst : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/graph/model/HCLG.fst
+    fst : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/graph/HCLG.fst
     mfcc-config : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/conf/mfcc_hires.conf
     frame-subsampling-factor: 3
     ivector-extraction-config : /opt/models/kaldi-generic-en-tdnn_fl-r20190609/ivectors_test_hires/conf/ivector_extractor.conf
