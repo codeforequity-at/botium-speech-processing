@@ -5,7 +5,7 @@ set -x
 mkdir -p /app/watch/stt_input_de
 mkdir -p /app/watch/stt_input_en
 mkdir -p /app/watch/stt_output
-mkdir -p /app/watch/temp
+mkdir -p /app/watch/stt_temp
 
 inotifywait -m /app/watch/stt_input_de /app/watch/stt_input_en -e close_write |
   while read path action file; do
@@ -27,19 +27,19 @@ inotifywait -m /app/watch/stt_input_de /app/watch/stt_input_en -e close_write |
       mv -f $path$file /app/watch/stt_output/$file.err_filetype_not_supported
       continue
     fi
-    curl -s -S -X POST "http://frontend:56000/api/convert/$profile" -H "Content-Type: $contenttype" -T $path$file -o /app/watch/temp/$file.wav
+    curl -s -S -X POST "http://frontend:56000/api/convert/$profile" -H "Content-Type: $contenttype" -T $path$file -o /app/watch/stt_temp/$file.wav
     if [ $? -ne 0 ]; then
       mv -f $path$file /app/watch/stt_output/$file.err_convert
-      rm -f /app/watch/temp/$file.wav
+      rm -f /app/watch/stt_temp/$file.wav
       continue
     fi
-    curl -s -S -X POST "http://frontend:56000/api/stt/$language" -H "Content-Type: audio/wav" -T /app/watch/temp/$file.wav -o /app/watch/stt_output/$file.json
+    curl -s -S -X POST "http://frontend:56000/api/stt/$language" -H "Content-Type: audio/wav" -T /app/watch/stt_temp/$file.wav -o /app/watch/stt_output/$file.json
     if [ $? -ne 0 ]; then
       mv -f $path$file /app/watch/stt_output/$file.err_stt
-      rm -f /app/watch/temp/$file.wav
+      rm -f /app/watch/stt_temp/$file.wav
       continue
     fi
     cat /app/watch/stt_output/$file.json | jq -r .text > /app/watch/stt_output/$file.txt
     mv -f $path$file /app/watch/stt_output/$file
-    rm -f /app/watch/temp/$file.wav
+    rm -f /app/watch/stt_temp/$file.wav
   done
