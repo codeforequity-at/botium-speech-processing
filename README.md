@@ -31,7 +31,7 @@ Some examples what you can do with this:
 
 ### Software and Hardware Requirements
 
-* 8GB of RAM (accessible for Docker) and 20GB free HD space
+* 8GB of RAM (accessible for Docker) and 40GB free HD space
 * Internet connectivity
 * [docker](https://docs.docker.com/)
 * [docker-compose](https://docs.docker.com/compose/)
@@ -66,6 +66,13 @@ Configuration changes with [environment variables](./frontend/resources/.env). S
 ### Securing the API
 
 The environment variable _BOTIUM_API_TOKENS_ contains a list of valid API Tokens accepted by the server (separated by whitespace or comma). The HTTP Header _BOTIUM_API_TOKEN_ is validated on each call to the API.
+
+### Caching
+
+For performance improvements, the result of the speech-to-text and text-to-speech calls are cached (by MD5-hash of audio or input text). To enforce reprocessing empty the cache directories:
+
+* frontent/resources/.cache/stt
+* frontent/resources/.cache/tts
 
 ## Testing
 
@@ -117,6 +124,14 @@ This project is standing on the shoulders of giants.
 * **SVOX Pico Text-to-Speech**
 * **[Kaldi](https://kaldi-asr.org/)**
 * **[Kaldi Tuda Recipe](https://github.com/uhh-lt/kaldi-tuda-de)**
+* **[Zamia Speech](https://github.com/gooofy/zamia-speech)**
 * **[Deepspeech](https://github.com/mozilla/DeepSpeech)** and **[Deepspeech German](https://github.com/AASHISHAG/deepspeech-german)**
 * **[SoX](http://sox.sourceforge.net/)**
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
+
+## Changelog
+
+### 2020-01-31
+
+* Using pre-trained models from [Zamia Speech](https://github.com/gooofy/zamia-speech) for speech recognition
+* Using latest [Kaldi](https://kaldi-asr.org/) build
