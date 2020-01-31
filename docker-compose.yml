@@ -18,7 +18,8 @@ services:
       context: watcher
     restart: always
     volumes:
-      - "./watch:/app/watch"
+      - "./watcher:/app/watch"
+      - "./logs/watcher:/app/logs"
   stt_en:
     build:
       context: stt

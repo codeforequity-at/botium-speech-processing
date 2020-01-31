@@ -1,16 +1,21 @@
 #!/bin/bash
 
+set -x
+
 mkdir -p /app/watch/stt_input_de
 mkdir -p /app/watch/stt_input_en
 mkdir -p /app/watch/stt_output
 mkdir -p /app/watch/temp
 
-inotifywait -m /app/watch/stt_input_de /app/watch/stt_input_en -e create |
+inotifywait -m /app/watch/stt_input_de /app/watch/stt_input_en -e close_write |
   while read path action file; do
-    if [[ "$path" =~ .*stt_input_de$ ]]; then
+    if [[ "$path" =~ .*stt_input_de.* ]]; then
       language=de
-    elif [[ "$file" =~ .*stt_input_en$ ]]; then
+    elif [[ "$path" =~ .*stt_input_en.* ]]; then
       language=en
+    else
+      mv -f $path$file /app/watch/stt_output/$file.err_language_not_supported
+      continue
     fi
     if [[ "$file" =~ .*mp3$ ]]; then
       profile=mp3tomonowav
@@ -22,18 +27,19 @@ inotifywait -m /app/watch/stt_input_de /app/watch/stt_input_en -e create |
       mv -f $path$file /app/watch/stt_output/$file.err_filetype_not_supported
       continue
     fi
-    curl -X POST "http://frontend/api/convert/$profile" -H "Content-Type: $contenttype" -T /app/watch/stt_output/$file -o /app/watch/temp/$file.wav
+    curl -s -S -X POST "http://frontend:56000/api/convert/$profile" -H "Content-Type: $contenttype" -T $path$file -o /app/watch/temp/$file.wav
     if [ $? -ne 0 ]; then
       mv -f $path$file /app/watch/stt_output/$file.err_convert
       rm -f /app/watch/temp/$file.wav
       continue
     fi
-    curl -X POST "http://frontend/api/stt/$language" -H "Content-Type: audio/wav" -T /app/watch/temp/$file.wav | jq -r .text > /app/watch/stt_output/$file.txt
+    curl -s -S -X POST "http://frontend:56000/api/stt/$language" -H "Content-Type: audio/wav" -T /app/watch/temp/$file.wav -o /app/watch/stt_output/$file.json
     if [ $? -ne 0 ]; then
       mv -f $path$file /app/watch/stt_output/$file.err_stt
       rm -f /app/watch/temp/$file.wav
       continue
     fi
+    cat /app/watch/stt_output/$file.json | jq -r .text > /app/watch/stt_output/$file.txt
     mv -f $path$file /app/watch/stt_output/$file
     rm -f /app/watch/temp/$file.wav
   done
