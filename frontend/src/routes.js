@@ -143,40 +143,44 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *               format: binary
  */
 router.get('/api/tts/:language', async (req, res, next) => {
-  const cacheFileName = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.txt'))
-  const cacheFileBuffer = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.bin'))
-  if (fs.existsSync(cacheFileName) && fs.existsSync(cacheFileBuffer)) {
+  if (req.query.text) {
+    const cacheFileName = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.txt'))
+    const cacheFileBuffer = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.bin'))
+    if (fs.existsSync(cacheFileName) && fs.existsSync(cacheFileBuffer)) {
+      try {
+        const name = fs.readFileSync(cacheFileName).toString()
+        const buffer = fs.readFileSync(cacheFileBuffer)
+        debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
+        res.writeHead(200, {
+          'Content-disposition': `attachment; filename="${name}"`,
+          'Content-Length': buffer.length
+        })
+        return res.end(buffer)
+      } catch (err) {
+        debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
+      }
+    }
+
     try {
-      const name = fs.readFileSync(cacheFileName).toString()
-      const buffer = fs.readFileSync(cacheFileBuffer)
-      debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
+      const { buffer, name } = await tts.tts({
+        language: req.params.language,
+        text: req.query.text
+      })
       res.writeHead(200, {
         'Content-disposition': `attachment; filename="${name}"`,
         'Content-Length': buffer.length
       })
-      return res.end(buffer)
+      res.end(buffer)
+
+      fs.writeFileSync(cacheFileName, name)
+      fs.writeFileSync(cacheFileBuffer, buffer)
+      debug(`Writing tts result ${cacheFileName} to cache: ${name}`)
     } catch (err) {
-      debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
+      return next(err)
     }
-  }
-
-  try {
-    const { buffer, name } = await tts.tts({
-      language: req.params.language,
-      text: req.query.text
-    })
-    res.writeHead(200, {
-      'Content-disposition': `attachment; filename="${name}"`,
-      'Content-Length': buffer.length
-    })
-    res.end(buffer)
-
-    fs.writeFileSync(cacheFileName, name)
-    fs.writeFileSync(cacheFileBuffer, buffer)
-    debug(`Writing tts result ${cacheFileName} to cache: ${name}`)
-  } catch (err) {
-    return next(err)
-  }
+  } else {
+    next(new Error('req.query.text empty'))
+  }    
 })
 
 /**
