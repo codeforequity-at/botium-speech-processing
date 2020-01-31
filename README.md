@@ -84,7 +84,7 @@ _Attention: in Google Chrome this only works with services published as HTTPS, y
 
 Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
 
-## Real Time API
+### Real Time API
 
 There are Websocket endpoints exposed for real-time audio decoding. Find the API description in the [Kaldi GStreamer Server documentation](https://github.com/alumae/kaldi-gstreamer-server#websocket-based-client-server-protocol).
 
@@ -92,6 +92,18 @@ The Websocket endpoints are:
 
 * English: ws://127.0.0.1/stt_en/client/ws/speech
 * German: ws://127.0.0.1/stt_de/client/ws/speech
+
+## File System Watcher
+
+Place audio files in these folders to receive the transript in the folder _watcher/stt_output_:
+
+* watcher/stt_input_de
+* watcher/stt_input_en
+
+Place text files in these folders to receive the synthesized speech in the folder _watcher/tss_output_:
+
+* watcher/tts_input_de
+* watcher/tts_input_en
 
 ## API Definition
 
@@ -135,3 +147,4 @@ This project is standing on the shoulders of giants.
 
 * Using pre-trained models from [Zamia Speech](https://github.com/gooofy/zamia-speech) for speech recognition
 * Using latest [Kaldi](https://kaldi-asr.org/) build
+* Added _file system watcher_ to transcribe and synthesize audio files
