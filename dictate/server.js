@@ -7,11 +7,6 @@ app.set('trust proxy', true)
 const port = process.env.PORT || 56100
 const dictateDir = process.env.DICTATEDIR || './dictate.js'
 
-
-app.get('/', (req, res) => {
-  res.redirect('./demos/mob.html')
-})
-
 app.get('/demos/mob.html', (req, res) => {
   let mobHtml = fs.readFileSync(`${dictateDir}/demos/mob.html`, { encoding: 'utf-8' })
 
@@ -30,6 +25,10 @@ app.get('/demos/mob.html', (req, res) => {
 
   res.header('Content-Type', 'text/html')
   res.send(mobHtml)
+})
+
+app.get('/', (req, res) => {
+  res.redirect('./demos/mob.html')
 })
 
 app.use(express.static(dictateDir))
