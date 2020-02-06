@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 mkdir -p /app/watch/stt_input_de
 mkdir -p /app/watch/stt_input_en
 mkdir -p /app/watch/stt_output
