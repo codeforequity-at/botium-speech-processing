@@ -6,12 +6,12 @@ const express = require('express')
 const { runsox } = require('./convert/sox.js')
 const debug = require('debug')('botium-speech-processing-routes')
 
-const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR || './resources/.cache/stt'
-const cachePathTts = process.env.BOTIUM_SPEECH_CACHE_DIR || './resources/.cache/tts'
+const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')
+const cachePathTts = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'tts')
 const cacheKey = (data, language, ext) => `${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`
 
-mkdirp.sync(cachePathStt)
-mkdirp.sync(cachePathTts)
+if (cachePathStt) mkdirp.sync(cachePathStt)
+if (cachePathTts) mkdirp.sync(cachePathTts)
 
 const router = express.Router()
 
@@ -83,14 +83,17 @@ router.get('/api/status', (req, res) => {
  */
 router.post('/api/stt/:language', async (req, res, next) => {
   if (Buffer.isBuffer(req.body)) {
-    const cacheFile = path.join(cachePathStt, cacheKey(req.body, req.params.language, '.json'))
-    if (fs.existsSync(cacheFile)) {
-      try {
-        const result = JSON.parse(fs.readFileSync(cacheFile).toString())
-        debug(`Reading stt result ${cacheFile} from cache: ${result.text}`)
-        return res.json(result).end()
-      } catch (err) {
-        debug(`Failed reading stt result ${cacheFile} from cache: ${err.message}`)
+    let cacheFile = null
+    if (cachePathStt) {
+      cacheFile = path.join(cachePathStt, cacheKey(req.body, req.params.language, '.json'))
+      if (fs.existsSync(cacheFile)) {
+        try {
+          const result = JSON.parse(fs.readFileSync(cacheFile).toString())
+          debug(`Reading stt result ${cacheFile} from cache: ${result.text}`)
+          return res.json(result).end()
+        } catch (err) {
+          debug(`Failed reading stt result ${cacheFile} from cache: ${err.message}`)
+        }
       }
     }
     try {
@@ -101,8 +104,10 @@ router.post('/api/stt/:language', async (req, res, next) => {
       const result = { text }
       res.json(result).end()
 
-      fs.writeFileSync(cacheFile, JSON.stringify(result))
-      debug(`Writing stt result ${cacheFile} to cache: ${text}`)
+      if (cachePathStt) {
+        fs.writeFileSync(cacheFile, JSON.stringify(result))
+        debug(`Writing stt result ${cacheFile} to cache: ${text}`)
+      }
     } catch (err) {
       return next(err)
     }
@@ -144,23 +149,26 @@ router.post('/api/stt/:language', async (req, res, next) => {
  */
 router.get('/api/tts/:language', async (req, res, next) => {
   if (req.query.text) {
-    const cacheFileName = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.txt'))
-    const cacheFileBuffer = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.bin'))
-    if (fs.existsSync(cacheFileName) && fs.existsSync(cacheFileBuffer)) {
-      try {
-        const name = fs.readFileSync(cacheFileName).toString()
-        const buffer = fs.readFileSync(cacheFileBuffer)
-        debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
-        res.writeHead(200, {
-          'Content-disposition': `attachment; filename="${name}"`,
-          'Content-Length': buffer.length
-        })
-        return res.end(buffer)
-      } catch (err) {
-        debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
+    let cacheFileName = null
+    let cacheFileBuffer = null
+    if (cachePathTts) {
+      cacheFileName = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.txt'))
+      cacheFileBuffer = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.bin'))
+      if (fs.existsSync(cacheFileName) && fs.existsSync(cacheFileBuffer)) {
+        try {
+          const name = fs.readFileSync(cacheFileName).toString()
+          const buffer = fs.readFileSync(cacheFileBuffer)
+          debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
+          res.writeHead(200, {
+            'Content-disposition': `attachment; filename="${name}"`,
+            'Content-Length': buffer.length
+          })
+          return res.end(buffer)
+        } catch (err) {
+          debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
+        }
       }
     }
-
     try {
       const { buffer, name } = await tts.tts({
         language: req.params.language,
@@ -172,63 +180,16 @@ router.get('/api/tts/:language', async (req, res, next) => {
       })
       res.end(buffer)
 
-      fs.writeFileSync(cacheFileName, name)
-      fs.writeFileSync(cacheFileBuffer, buffer)
-      debug(`Writing tts result ${cacheFileName} to cache: ${name}`)
+      if (cachePathTts) {
+        fs.writeFileSync(cacheFileName, name)
+        fs.writeFileSync(cacheFileBuffer, buffer)
+        debug(`Writing tts result ${cacheFileName} to cache: ${name}`)
+      }
     } catch (err) {
       return next(err)
     }
   } else {
     next(new Error('req.query.text empty'))
-  }    
-})
-
-/**
- * @swagger
- * /api/stt/{language}:
- *   post:
- *     description: Convert audio file to text
- *     security:
- *       - ApiKeyAuth: []
- *     produces:
- *       - application/json
- *     parameters:
- *       - name: language
- *         description: ISO-639-1 language code
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       description: Audio file
- *       content:
- *         audio/wav:
- *           schema:
- *             type: string
- *             format: binary
- *     responses:
- *       200:
- *         description: Extracted text
- *         schema:
- *           properties:
- *             text:
- *               type: string
- */
-router.post('/api/stt/:language', async (req, res, next) => {
-  if (Buffer.isBuffer(req.body)) {
-    try {
-      const { text } = await stt.stt({
-        language: req.params.language,
-        buffer: req.body
-      })
-      res.json({
-        text
-      }).end()
-    } catch (err) {
-      return next(err)
-    }
-  } else {
-    next(new Error('req.body is not a buffer'))
   }
 })
 
