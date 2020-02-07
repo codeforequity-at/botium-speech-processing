@@ -78,13 +78,14 @@ For performance improvements, the result of the speech-to-text and text-to-speec
 
 Point your browser to http://127.0.0.1/ to open Swagger UI to try out the API.
 
-Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition. 
+Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition (_for Kaldi only_)
 
 _Attention: in Google Chrome this only works with services published as HTTPS, you will have to take of this yourself. For example, you could publish it via ngrok tunnel._
 
 Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
 
 ### Real Time API
+_Available for Kaldi only_
 
 There are Websocket endpoints exposed for real-time audio decoding. Find the API description in the [Kaldi GStreamer Server documentation](https://github.com/alumae/kaldi-gstreamer-server#websocket-based-client-server-protocol).
 
