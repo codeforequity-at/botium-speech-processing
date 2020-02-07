@@ -28,11 +28,13 @@ class Kaldi {
       if (body.status === 0) {
         if (body.hypotheses && body.hypotheses[0].utterance) {
           return {
-            text: body.hypotheses[0].utterance
+            text: body.hypotheses[0].utterance,
+            debug: body
           }
         } else {
           return {
-            text: ''
+            text: '',
+            debug: body
           }
         }
       } else {

@@ -97,11 +97,10 @@ router.post('/api/stt/:language', async (req, res, next) => {
       }
     }
     try {
-      const { text } = await stt.stt({
+      const result = await stt.stt({
         language: req.params.language,
         buffer: req.body
       })
-      const result = { text }
       res.json(result).end()
 
       if (cachePathStt) {

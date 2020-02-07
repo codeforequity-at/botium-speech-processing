@@ -1,6 +1,6 @@
 const fs = require('fs')
 const uuidv1 = require('uuid/v1')
-const speech = require('@google-cloud/speech')
+const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech') 
 const storage = require('@google-cloud/storage')
 const debug = require('debug')('botium-speech-processing-google')
 
@@ -65,13 +65,14 @@ class Google {
 
     try {
       const [operation, initialApiResponse] = await speechClient.longRunningRecognize(request)
-      debug(`Google Cloud initialApiResponse: ${JSON.stringify(initialApiResponse)}`)
+      debug(`Google Cloud initialApiResponse: ${JSON.stringify(initialApiResponse, null, 2)}`)
       // eslint-disable-next-line no-unused-vars
       const [response, metadata, finalApiResponse] = await operation.promise()
-      debug(`Google Cloud finalApiResponse: ${JSON.stringify(finalApiResponse)}`)
+      debug(`Google Cloud response: ${JSON.stringify(response, null, 2)}`)
       const transcription = response.results.map(result => result.alternatives[0].transcript).join('\n')
       return {
-        text: transcription
+        text: transcription,
+        debug: response
       }
     } catch (err) {
       debug(err)
