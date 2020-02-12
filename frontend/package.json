@@ -25,6 +25,7 @@
     "nodemon": "^2.0.1",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8",
+    "sanitize-filename": "^1.6.3",
     "swagger-jsdoc": "^3.5.0",
     "swagger-ui-express": "^4.1.2",
     "uuid": "^3.3.3",

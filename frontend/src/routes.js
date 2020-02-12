@@ -3,6 +3,7 @@ const path = require('path')
 const mkdirp = require('mkdirp')
 const crypto = require('crypto')
 const express = require('express')
+const sanitize = require('sanitize-filename')
 const { runsox } = require('./convert/sox.js')
 const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
@@ -15,9 +16,6 @@ if (cachePathStt) mkdirp.sync(cachePathStt)
 if (cachePathTts) mkdirp.sync(cachePathTts)
 
 const router = express.Router()
-
-const tts = new (require(`./tts/${process.env.BOTIUM_SPEECH_PROVIDER_TTS}`))()
-const stt = new (require(`./stt/${process.env.BOTIUM_SPEECH_PROVIDER_STT}`))()
 
 /**
  * @swagger
@@ -73,6 +71,13 @@ router.get('/api/status', (req, res) => {
  *         required: false
  *         schema:
  *           type: string
+ *       - name: stt
+ *         description: Speech-to-text backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [kaldi, google]
  *     requestBody:
  *       description: Audio file
  *       content:
@@ -104,6 +109,8 @@ router.post('/api/stt/:language', async (req, res, next) => {
       }
     }
     try {
+      const stt = new (require(`./stt/${(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT}`))()
+
       const result = await stt.stt({
         language: req.params.language,
         buffer: req.body
@@ -147,6 +154,13 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: tts
+ *         description: Text-to-speech backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [marytts, picotts]
  *     responses:
  *       200:
  *         description: Audio file
@@ -179,6 +193,8 @@ router.get('/api/tts/:language', async (req, res, next) => {
       }
     }
     try {
+      const tts = new (require(`./tts/${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS}`))()
+
       const { buffer, name } = await tts.tts({
         language: req.params.language,
         text: req.query.text

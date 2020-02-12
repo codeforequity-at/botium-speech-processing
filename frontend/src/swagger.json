@@ -65,6 +65,19 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "stt",
+            "description": "Speech-to-text backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kaldi",
+                "google"
+              ]
+            }
           }
         ],
         "requestBody": {
@@ -120,6 +133,19 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "tts",
+            "description": "Text-to-speech backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "marytts",
+                "picotts"
+              ]
             }
           }
         ],
