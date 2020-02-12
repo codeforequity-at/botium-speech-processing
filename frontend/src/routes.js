@@ -4,6 +4,7 @@ const mkdirp = require('mkdirp')
 const crypto = require('crypto')
 const express = require('express')
 const { runsox } = require('./convert/sox.js')
+const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
 
 const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')
@@ -66,6 +67,12 @@ router.get('/api/status', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: hint
+ *         description: Hint text for calculating the Levenshtein edit distance for the result text (word error rate)
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
  *     requestBody:
  *       description: Audio file
  *       content:
@@ -101,6 +108,9 @@ router.post('/api/stt/:language', async (req, res, next) => {
         language: req.params.language,
         buffer: req.body
       })
+      if (req.query.hint) {
+        result.wer = await wer(req.query.hint, result.text)
+      }
       res.json(result).end()
 
       if (cachePathStt) {
@@ -247,6 +257,42 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   } catch (err) {
     return next(err)
   }
+})
+
+/**
+ * @swagger
+ * /api/wer:
+ *   get:
+ *     description: Calculate Levenshtein edit distance between two strings (word error rate)
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: text1
+ *         description: Text
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: text2
+ *         description: Text
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Levenshtein Edit Distance on word level
+ *         schema:
+ *           properties:
+ *             distance:
+ *               type: integer
+ *             wer:
+ *               type: number
+ */
+router.get('/api/wer', async (req, res) => {
+  res.json(await wer(req.query.text1, req.query.text2))
 })
 
 module.exports = router
