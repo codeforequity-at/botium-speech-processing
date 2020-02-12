@@ -56,6 +56,28 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "hint",
+            "description": "Hint text for calculating the Levenshtein edit distance for the result text (word error rate)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stt",
+            "description": "Speech-to-text backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kaldi",
+                "google"
+              ]
+            }
           }
         ],
         "requestBody": {
@@ -111,6 +133,19 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "tts",
+            "description": "Text-to-speech backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "marytts",
+                "picotts"
+              ]
             }
           }
         ],
@@ -170,6 +205,54 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wer": {
+      "get": {
+        "description": "Calculate Levenshtein edit distance between two strings (word error rate)",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "text1",
+            "description": "Text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "text2",
+            "description": "Text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Levenshtein Edit Distance on word level",
+            "schema": {
+              "properties": {
+                "distance": {
+                  "type": "integer"
+                },
+                "wer": {
+                  "type": "number"
                 }
               }
             }

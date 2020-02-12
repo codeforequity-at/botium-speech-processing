@@ -18,6 +18,7 @@ class Kaldi {
 
     let response
     try {
+      debug(`Calling kaldi url ${requestOptions.uri} ...`)
       response = await request(requestOptions)
     } catch (err) {
       throw new Error(`Calling url ${requestOptions.uri} failed: ${err.message}`)

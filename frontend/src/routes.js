@@ -3,7 +3,9 @@ const path = require('path')
 const mkdirp = require('mkdirp')
 const crypto = require('crypto')
 const express = require('express')
+const sanitize = require('sanitize-filename')
 const { runsox } = require('./convert/sox.js')
+const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
 
 const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')
@@ -14,9 +16,6 @@ if (cachePathStt) mkdirp.sync(cachePathStt)
 if (cachePathTts) mkdirp.sync(cachePathTts)
 
 const router = express.Router()
-
-const tts = new (require(`./tts/${process.env.BOTIUM_SPEECH_PROVIDER_TTS}`))()
-const stt = new (require(`./stt/${process.env.BOTIUM_SPEECH_PROVIDER_STT}`))()
 
 /**
  * @swagger
@@ -66,6 +65,19 @@ router.get('/api/status', (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: hint
+ *         description: Hint text for calculating the Levenshtein edit distance for the result text (word error rate)
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: stt
+ *         description: Speech-to-text backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [kaldi, google]
  *     requestBody:
  *       description: Audio file
  *       content:
@@ -97,10 +109,15 @@ router.post('/api/stt/:language', async (req, res, next) => {
       }
     }
     try {
+      const stt = new (require(`./stt/${(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT}`))()
+
       const result = await stt.stt({
         language: req.params.language,
         buffer: req.body
       })
+      if (req.query.hint) {
+        result.wer = await wer(req.query.hint, result.text)
+      }
       res.json(result).end()
 
       if (cachePathStt) {
@@ -137,6 +154,13 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: tts
+ *         description: Text-to-speech backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [marytts, picotts]
  *     responses:
  *       200:
  *         description: Audio file
@@ -169,6 +193,8 @@ router.get('/api/tts/:language', async (req, res, next) => {
       }
     }
     try {
+      const tts = new (require(`./tts/${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS}`))()
+
       const { buffer, name } = await tts.tts({
         language: req.params.language,
         text: req.query.text
@@ -247,6 +273,42 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   } catch (err) {
     return next(err)
   }
+})
+
+/**
+ * @swagger
+ * /api/wer:
+ *   get:
+ *     description: Calculate Levenshtein edit distance between two strings (word error rate)
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: text1
+ *         description: Text
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: text2
+ *         description: Text
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Levenshtein Edit Distance on word level
+ *         schema:
+ *           properties:
+ *             distance:
+ *               type: integer
+ *             wer:
+ *               type: number
+ */
+router.get('/api/wer', async (req, res) => {
+  res.json(await wer(req.query.text1, req.query.text2))
 })
 
 module.exports = router
