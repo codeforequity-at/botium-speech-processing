@@ -144,6 +144,12 @@ This project is standing on the shoulders of giants.
 
 ## Changelog
 
+### 2020-02-22
+
+* Additional endpoint to calculate the Word Error Rate (Levenshtein Distance) between two texts
+* When giving the _hint_-parameter with the expected text to the STT-endpoint, the Word Error Rate will be calculated and returned
+* When multiple STT- or TTS-engines are configured, select the one to use with the _stt_ or _tts_ parameter (in combination with the Word Error Rate calculation useful for comparing performance of two engines)
+
 ### 2020-01-31
 
 * Using pre-trained models from [Zamia Speech](https://github.com/gooofy/zamia-speech) for speech recognition
