@@ -4,7 +4,7 @@ const mkdirp = require('mkdirp')
 const crypto = require('crypto')
 const express = require('express')
 const sanitize = require('sanitize-filename')
-const { runsox } = require('./convert/sox.js')
+const { runsox } = require('./convert/sox')
 const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
 
@@ -234,6 +234,18 @@ router.get('/api/tts/:language', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: start
+ *         description: Start Timecode within audio stream (01:32)
+ *         in: query
+ *         schema:
+ *           type: string
+ *           pattern: '^([0-5][0-9]):([0-5][0-9])$'
+ *       - name: end
+ *         description: End Timecode within audio stream (02:48)
+ *         in: query
+ *         schema:
+ *           type: string
+ *           pattern: '^([0-5][0-9]):([0-5][0-9])$'
  *     requestBody:
  *       description: Audio file
  *       content:
@@ -264,7 +276,7 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   }
 
   try {
-    const outputBuffer = await runsox(process.env[envVarSox], req.body)
+    const outputBuffer = await runsox(process.env[envVarSox], { inputBuffer: req.body, start: req.query.start, end: req.query.end })
     res.writeHead(200, {
       'Content-disposition': `attachment; filename="${process.env[envVarOutput]}"`,
       'Content-Length': outputBuffer.length
