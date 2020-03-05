@@ -184,6 +184,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "start",
+            "description": "Start Timecode within audio stream (01:32)",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-5][0-9]):([0-5][0-9])$"
+            }
+          },
+          {
+            "name": "end",
+            "description": "End Timecode within audio stream (02:48)",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-5][0-9]):([0-5][0-9])$"
+            }
           }
         ],
         "requestBody": {

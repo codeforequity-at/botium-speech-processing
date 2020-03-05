@@ -4,11 +4,18 @@ const { spawn } = require('child_process')
 const uuidv1 = require('uuid/v1')
 const debug = require('debug')('botium-speech-processing-convert-sox')
 
-const runsox = (cmdLine, inputBuffer) => {
+const runsox = (cmdLine, { inputBuffer, start, end }) => {
   return new Promise((resolve, reject) => {
     const output = `/tmp/${uuidv1()}.wav`
-
-    const cmdLineSox = Mustache.render(cmdLine, { output })
+    
+    let cmdLineSox = Mustache.render(cmdLine, { output })
+    if (start && end) {
+      cmdLineSox = `${cmdLineSox} trim ${start} ${end}`
+    } else if (start && !end) {
+      cmdLineSox = `${cmdLineSox} trim ${start}`
+    } else if (!start && end) {
+      cmdLineSox = `${cmdLineSox} trim 0 ${end}`
+    }
     debug(`cmdLineSox: ${cmdLineSox}`)
     const cmdLineSoxParts = cmdLineSox.split(' ')
     const sox = spawn(cmdLineSoxParts[0], cmdLineSoxParts.slice(1))
