@@ -122,7 +122,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
 
       if (cachePathStt) {
         fs.writeFileSync(cacheFile, JSON.stringify(result))
-        debug(`Writing stt result ${cacheFile} to cache: ${text}`)
+        debug(`Writing stt result ${cacheFile} to cache: ${result.text}`)
       }
     } catch (err) {
       return next(err)

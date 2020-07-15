@@ -1,6 +1,6 @@
 const fs = require('fs')
 const uuidv1 = require('uuid/v1')
-const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech') 
+const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech')
 const storage = require('@google-cloud/storage')
 const debug = require('debug')('botium-speech-processing-google')
 

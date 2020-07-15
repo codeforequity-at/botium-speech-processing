@@ -92,7 +92,7 @@ For performance improvements, the result of the speech-to-text and text-to-speec
 
 Point your browser to http://127.0.0.1/ to open Swagger UI to try out the API.
 
-Point your browser to http://127.0.0.1/dictate to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition (_for Kaldi only_)
+Point your browser to http://127.0.0.1/dictate/ to open a rudimentary [dictate.js-interface](https://github.com/Kaljurand/dictate.js) for testing speech recognition (_for Kaldi only_)
 
 _Attention: in Google Chrome this only works with services published as HTTPS, you will have to take of this yourself. For example, you could publish it via ngrok tunnel._
 
