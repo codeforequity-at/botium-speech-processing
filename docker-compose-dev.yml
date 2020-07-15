@@ -8,29 +8,38 @@ services:
     ports:
       - 80:80
   frontend:
-    image: botium/botium-speech-frontend:latest
+    build:
+      context: frontend
     restart: always
     volumes:
       - "./frontend/resources:/app/resources"
   watcher:
-    image: botium/botium-speech-watcher:latest
+    build:
+      context: watcher
     restart: always
     volumes:
       - "./watcher:/app/watch"
       - "./logs/watcher:/app/logs"
   stt_en:
-    image: botium/botium-speech-kaldi-en:latest
+    build:
+      context: stt
+      dockerfile: Dockerfile.kaldi.en
     restart: always
     volumes:
       - "./logs/stt_en:/opt/logs"
   stt_de:
-    image: botium/botium-speech-kaldi-de:latest
+    build:
+      context: stt
+      dockerfile: Dockerfile.kaldi.de
     restart: always
     volumes:
       - "./logs/stt_de:/opt/logs"
   tts:
-    image: botium/botium-speech-marytts
+    build:
+      context: tts
+      dockerfile: Dockerfile.marytts
     restart: always
   dictate:
-    image: botium/botium-speech-dictate
+    build:
+      context: dictate
     restart: always

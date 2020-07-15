@@ -43,15 +43,24 @@ Some examples what you can do with this:
 
 _Note: memory usage can be reduced if only one language is required - default configuration comes with two languages._
 
-### Build Docker Containers
+### Use Prebuilt Docker Images
 
 Clone or download this repository and start with docker-compose:
 
     > docker-compose up -d
 
-This will take some time to build.
+This will download the prebuilt images from Dockerhub.
 
 Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
+
+
+### Optional: Build Docker Images
+
+You can optionally built your own docker images (if you made any changes in this repository, for instance to download the latest version of a model). Clone or download this repository and run docker-compose:
+
+    > docker-compose -f docker-compose-dev.yml up -d
+
+This will take some time to build.
 
 ### Configuration
 
