@@ -28,7 +28,7 @@ app.get('/demos/mob.html', (req, res) => {
 })
 
 app.get('/', (req, res) => {
-  res.redirect('./demos/mob.html')
+  res.redirect('/dictate/demos/mob.html')
 })
 
 app.use(express.static(dictateDir))
