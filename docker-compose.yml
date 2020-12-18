@@ -8,7 +8,7 @@ services:
     ports:
       - 80:80
   frontend:
-    image: botium/botium-speech-frontend:latest
+    image: botium/botium-speech-frontend:${TAG}
     restart: always
     environment:
       BOTIUM_API_TOKENS: 
@@ -19,24 +19,24 @@ services:
     volumes:
       - "./frontend/resources:/app/resources"
   watcher:
-    image: botium/botium-speech-watcher:latest
+    image: botium/botium-speech-watcher:${TAG}
     restart: always
     volumes:
       - "./watcher:/app/watch"
       - "./logs/watcher:/app/logs"
   stt_en:
-    image: botium/botium-speech-kaldi-en:latest
+    image: botium/botium-speech-kaldi-en:${TAG}
     restart: always
     volumes:
       - "./logs/stt_en:/opt/logs"
   stt_de:
-    image: botium/botium-speech-kaldi-de:latest
+    image: botium/botium-speech-kaldi-de:${TAG}
     restart: always
     volumes:
       - "./logs/stt_de:/opt/logs"
   tts:
-    image: botium/botium-speech-marytts:latest
+    image: botium/botium-speech-marytts:${TAG}
     restart: always
   dictate:
-    image: botium/botium-speech-dictate:latest
+    image: botium/botium-speech-dictate:${TAG}
     restart: always
