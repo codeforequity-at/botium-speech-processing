@@ -12,10 +12,8 @@ services:
     restart: always
     environment:
       BOTIUM_API_TOKENS: 
-      BOTIUM_SPEECH_PROVIDER_TTS: marytts
+      BOTIUM_SPEECH_PROVIDER_TTS: picotts
       BOTIUM_SPEECH_PROVIDER_STT: kaldi
-      BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL:
-      BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
     volumes:
       - "./frontend/resources:/app/resources"
   watcher:
@@ -34,9 +32,6 @@ services:
     restart: always
     volumes:
       - "./logs/stt_de:/opt/logs"
-  tts:
-    image: botium/botium-speech-marytts:latest
-    restart: always
   dictate:
     image: botium/botium-speech-dictate:latest
     restart: always

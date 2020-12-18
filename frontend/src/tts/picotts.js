@@ -3,6 +3,8 @@ const { spawn } = require('child_process')
 const { v1: uuidv1 } = require('uuid')
 const debug = require('debug')('botium-speech-processing-picotts')
 
+const { ttsFilename } = require('../utils')
+
 const voicesList = [
   {
     name: 'en-EN',
@@ -55,7 +57,7 @@ class PicoTTS {
     if (!picoVoice) throw new Error(`Voice <${voice || 'default'}> for language <${language}> not available`)
 
     return new Promise((resolve, reject) => {
-      const output = `/tmp/${uuidv1()}.wav`
+      const output = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${uuidv1()}.wav`
 
       const cmdLinePico = `${process.env.BOTIUM_SPEECH_PICO_CMDPREFIX || 'pico2wave'} --lang=${picoVoice.name} --wave=${output}`
       debug(`cmdLinePico: ${cmdLinePico}`)
@@ -70,7 +72,7 @@ class PicoTTS {
             fs.unlinkSync(output)
             resolve({
               buffer: outputBuffer,
-              name: 'tts.wav'
+              name: `${ttsFilename(text)}.wav`
             })
           } catch (err) {
             reject(new Error(`pico2wave process output file ${output} not readable: ${err.message}`))

@@ -2,6 +2,8 @@ const _ = require('lodash')
 const request = require('request-promise-native')
 const debug = require('debug')('botium-speech-processing-marytts')
 
+const { ttsFilename } = require('../utils')
+
 let maryVoices = null
 
 class MaryTTS {
@@ -62,7 +64,7 @@ class MaryTTS {
       debug(`Called url ${requestOptions.uri} success`)
       return {
         buffer: response.body,
-        name: 'tts.wav'
+        name: `${ttsFilename(text)}.wav`
       }
     } else {
       throw new Error(`Calling url ${requestOptions.uri} failed with code ${response.statusCode}: ${response.statusMessage}`)

@@ -6,6 +6,7 @@
     "eslint": "eslint src",
     "eslint-fix": "eslint --fix src",
     "start": "cross-env DOTENV_FLOW_PATH=./resources nodemon -w ./resources/.env -w ./resources/.env.local -w ./src/ -x \"node -r dotenv-flow/config\" ./src/server.js",
+    "start-dist": "cross-env DOTENV_FLOW_PATH=./resources node -r dotenv-flow/config ./src/server.js",
     "jsdoc": "swagger-jsdoc -d ./src/swaggerDef.json -o ./src/swagger.json src/routes.js"
   },
   "author": "Botium GmbH",

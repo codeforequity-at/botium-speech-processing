@@ -6,7 +6,7 @@ const debug = require('debug')('botium-speech-processing-convert-sox')
 
 const runsox = (cmdLine, { inputBuffer, start, end }) => {
   return new Promise((resolve, reject) => {
-    const output = `/tmp/${uuidv1()}.wav`
+    const output = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${uuidv1()}.wav`
 
     let cmdLineSox = Mustache.render(cmdLine, { output })
     if (start && end) {

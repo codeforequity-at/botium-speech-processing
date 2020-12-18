@@ -1,7 +1,7 @@
 const textToSpeech = require('@google-cloud/text-to-speech')
 const debug = require('debug')('botium-speech-processing-google-tts')
 
-const { googleOptions } = require('../utils')
+const { googleOptions, ttsFilename } = require('../utils')
 
 let googleVoices = null
 
@@ -54,7 +54,7 @@ class GoogleTTS {
       const [response] = await client.synthesizeSpeech(request)
       return {
         buffer: response.audioContent,
-        name: 'tts.wav'
+        name: `${ttsFilename(text)}.wav`
       }
     } catch (err) {
       debug(err)

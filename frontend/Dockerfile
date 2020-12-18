@@ -4,12 +4,15 @@ RUN apt-get update && apt-get -y install curl gnupg && curl -sL https://deb.node
 RUN apt-get install -y dos2unix sox libsox-fmt-mp3 libttspico-utils
 
 WORKDIR /app
-COPY . /app
-RUN find . -type f -print0 | xargs -0 dos2unix
+COPY ./package.json /app/package.json
 RUN npm install --no-optional --production
+COPY . /app
+RUN find . -type f ! -path '*/node_modules/*' -print0 | xargs -0 dos2unix
 
 VOLUME /app/resources
 
 EXPOSE 56000
 
-CMD npm start
+RUN groupadd --gid 1000 node && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
+USER node
+CMD npm run start-dist

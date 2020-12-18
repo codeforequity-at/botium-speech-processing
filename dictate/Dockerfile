@@ -11,4 +11,5 @@ RUN curl -L -o dicatejs.zip "https://github.com/Kaljurand/dictate.js/archive/mas
 
 EXPOSE 56100
 
+USER node
 CMD DICTATEDIR=/app/dictate.js-master npm start

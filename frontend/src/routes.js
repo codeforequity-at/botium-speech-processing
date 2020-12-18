@@ -16,6 +16,10 @@ const cacheKeyTts = (data, language, voice, ext) => `${crypto.createHash('md5').
 if (cachePathStt) mkdirp.sync(cachePathStt)
 if (cachePathTts) mkdirp.sync(cachePathTts)
 
+if (process.env.BOTIUM_SPEECH_TMP_DIR) {
+  mkdirp.sync(process.env.BOTIUM_SPEECH_TMP_DIR)
+}
+
 const ttsEngines = {
   google: new (require('./tts/google'))(),
   marytts: new (require('./tts/marytts'))(),

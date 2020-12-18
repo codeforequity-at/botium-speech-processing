@@ -1,4 +1,6 @@
 const fs = require('fs')
+const _ = require('lodash')
+const sanitize = require('sanitize-filename')
 const speechScorer = require('word-error-rate')
 
 const wer = async (text1, text2) => {
@@ -6,6 +8,11 @@ const wer = async (text1, text2) => {
     distance: speechScorer.calculateEditDistance(text1 || '', text2 || ''),
     wer: speechScorer.wordErrorRate(text1 || '', text2 || '')
   }
+}
+
+const ttsFilename = (text) => {
+  const shortenedText = _.truncate(text, { length: 500 })
+  return sanitize(shortenedText)
 }
 
 const cleanEnv = (envName) => {
@@ -28,5 +35,6 @@ const googleOptions = () => {
 
 module.exports = {
   wer,
+  ttsFilename,
   googleOptions
 }

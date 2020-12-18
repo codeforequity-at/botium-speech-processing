@@ -10,12 +10,14 @@ services:
   frontend:
     build:
       context: frontend
+    image: botium/botium-speech-frontend:develop
     restart: always
     volumes:
       - "./frontend/resources:/app/resources"
 #  watcher:
 #    build:
 #      context: watcher
+#    image: botium/botium-speech-watcher:develop
 #    restart: always
 #    volumes:
 #      - "./watcher:/app/watch"
@@ -24,6 +26,7 @@ services:
 #    build:
 #      context: stt
 #      dockerfile: Dockerfile.kaldi.en
+#    image: botium/botium-speech-kaldi-en:develop
 #    restart: always
 #    volumes:
 #      - "./logs/stt_en:/opt/logs"
@@ -31,6 +34,7 @@ services:
 #    build:
 #      context: stt
 #      dockerfile: Dockerfile.kaldi.de
+#    image: botium/botium-speech-kaldi-de:develop
 #    restart: always
 #    volumes:
 #      - "./logs/stt_de:/opt/logs"
@@ -38,8 +42,10 @@ services:
     build:
       context: tts
       dockerfile: Dockerfile.marytts
+    image: botium/botium-speech-marytts:develop
     restart: always
 #  dictate:
 #    build:
 #      context: dictate
+#    image: botium/botium-speech-dictate:develop
 #    restart: always

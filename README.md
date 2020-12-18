@@ -153,6 +153,12 @@ This project is standing on the shoulders of giants.
 
 ## Changelog
 
+### 2020-12-18
+
+* Adding support for Google Text-To-Speech
+* Adding support for listing and using available TTS voices
+* Added sample docker-compose configurations for PicoTTS and Google
+
 ### 2020-03-05
 
 * Optional _start_/_end_ parameters for audio file conversion to trim an audio file by time codes formatted as mm:ss (_01:32_)
