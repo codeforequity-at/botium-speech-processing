@@ -10,10 +10,21 @@ const debug = require('debug')('botium-speech-processing-routes')
 
 const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')
 const cachePathTts = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'tts')
-const cacheKey = (data, language, ext) => `${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`
+const cacheKeyStt = (data, language, ext) => `${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`
+const cacheKeyTts = (data, language, voice, ext) => `${crypto.createHash('md5').update(data).digest('hex')}_${language}_${voice || 'default'}${ext}`
 
 if (cachePathStt) mkdirp.sync(cachePathStt)
 if (cachePathTts) mkdirp.sync(cachePathTts)
+
+const ttsEngines = {
+  google: new (require('./tts/google'))(),
+  marytts: new (require('./tts/marytts'))(),
+  picotts: new (require('./tts/picotts'))()
+}
+const sttEngines = {
+  google: new (require('./stt/google'))(),
+  kaldi: new (require('./stt/kaldi'))()
+}
 
 const router = express.Router()
 
@@ -60,7 +71,7 @@ router.get('/api/status', (req, res) => {
  *       - application/json
  *     parameters:
  *       - name: language
- *         description: ISO-639-1 language code
+ *         description: ISO-639-1 language code (2 letters)
  *         in: path
  *         required: true
  *         schema:
@@ -97,7 +108,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
   if (Buffer.isBuffer(req.body)) {
     let cacheFile = null
     if (cachePathStt) {
-      cacheFile = path.join(cachePathStt, cacheKey(req.body, req.params.language, '.json'))
+      cacheFile = path.join(cachePathStt, cacheKeyStt(req.body, req.params.language, '.json'))
       if (fs.existsSync(cacheFile)) {
         try {
           const result = JSON.parse(fs.readFileSync(cacheFile).toString())
@@ -109,7 +120,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
       }
     }
     try {
-      const stt = new (require(`./stt/${(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT}`))()
+      const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
 
       const result = await stt.stt({
         language: req.params.language,
@@ -121,14 +132,59 @@ router.post('/api/stt/:language', async (req, res, next) => {
       res.json(result).end()
 
       if (cachePathStt) {
-        fs.writeFileSync(cacheFile, JSON.stringify(result))
-        debug(`Writing stt result ${cacheFile} to cache: ${result.text}`)
+        try {
+          fs.writeFileSync(cacheFile, JSON.stringify(result))
+          debug(`Writing stt result ${cacheFile} to cache: ${result.text}`)
+        } catch (err) {
+          debug(`Writing stt result ${cacheFile} to cache: ${result.text} - failed: ${err.message}`)
+        }
       }
     } catch (err) {
       return next(err)
     }
   } else {
     next(new Error('req.body is not a buffer'))
+  }
+})
+
+/**
+ * @swagger
+ * /api/ttsvoices:
+ *   get:
+ *     description: Get list of voices
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: tts
+ *         description: Text-to-speech backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [google, marytts, picotts]
+ *     responses:
+ *       200:
+ *         description: List of supported voices
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               language:
+ *                 type: string
+ *               gender:
+ *                 type: [male, female, neutral]
+ */
+router.get('/api/ttsvoices', async (req, res, next) => {
+  try {
+    const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+    res.json(await tts.voices())
+  } catch (err) {
+    return next(err)
   }
 })
 
@@ -143,7 +199,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *       - audio/wav
  *     parameters:
  *       - name: language
- *         description: ISO-639-1 language code
+ *         description: ISO-639-1 language code (2 letters)
  *         in: path
  *         required: true
  *         schema:
@@ -154,13 +210,19 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - name: voice
+ *         description: Voice name
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
  *       - name: tts
  *         description: Text-to-speech backend
  *         in: query
  *         required: false
  *         schema:
  *           type: string
- *           enum: [marytts, picotts]
+ *           enum: [google, marytts, picotts]
  *     responses:
  *       200:
  *         description: Audio file
@@ -175,8 +237,8 @@ router.get('/api/tts/:language', async (req, res, next) => {
     let cacheFileName = null
     let cacheFileBuffer = null
     if (cachePathTts) {
-      cacheFileName = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.txt'))
-      cacheFileBuffer = path.join(cachePathTts, cacheKey(req.query.text, req.params.language, '.bin'))
+      cacheFileName = path.join(cachePathTts, cacheKeyTts(req.query.text, req.params.language, req.query.voice, '.txt'))
+      cacheFileBuffer = path.join(cachePathTts, cacheKeyTts(req.query.text, req.params.language, req.query.voice, '.bin'))
       if (fs.existsSync(cacheFileName) && fs.existsSync(cacheFileBuffer)) {
         try {
           const name = fs.readFileSync(cacheFileName).toString()
@@ -193,10 +255,11 @@ router.get('/api/tts/:language', async (req, res, next) => {
       }
     }
     try {
-      const tts = new (require(`./tts/${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS}`))()
+      const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
 
       const { buffer, name } = await tts.tts({
         language: req.params.language,
+        voice: req.query.voice,
         text: req.query.text
       })
       res.writeHead(200, {
@@ -206,9 +269,13 @@ router.get('/api/tts/:language', async (req, res, next) => {
       res.end(buffer)
 
       if (cachePathTts) {
-        fs.writeFileSync(cacheFileName, name)
-        fs.writeFileSync(cacheFileBuffer, buffer)
-        debug(`Writing tts result ${cacheFileName} to cache: ${name}`)
+        try {
+          fs.writeFileSync(cacheFileName, name)
+          fs.writeFileSync(cacheFileBuffer, buffer)
+          debug(`Writing tts result ${cacheFileName} to cache: ${name}`)
+        } catch (err) {
+          debug(`Writing tts result ${cacheFileName} to cache: ${name} - failed: ${err.message}`)
+        }
       }
     } catch (err) {
       return next(err)

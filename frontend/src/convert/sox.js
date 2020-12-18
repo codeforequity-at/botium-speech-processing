@@ -1,7 +1,7 @@
 const fs = require('fs')
 const Mustache = require('mustache')
 const { spawn } = require('child_process')
-const uuidv1 = require('uuid/v1')
+const { v1: uuidv1 } = require('uuid')
 const debug = require('debug')('botium-speech-processing-convert-sox')
 
 const runsox = (cmdLine, { inputBuffer, start, end }) => {

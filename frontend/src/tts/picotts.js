@@ -1,21 +1,63 @@
 const fs = require('fs')
-const Mustache = require('mustache')
 const { spawn } = require('child_process')
-const uuidv1 = require('uuid/v1')
+const { v1: uuidv1 } = require('uuid')
 const debug = require('debug')('botium-speech-processing-picotts')
 
+const voicesList = [
+  {
+    name: 'en-EN',
+    language: 'en',
+    gender: 'neutral'
+  },
+  {
+    name: 'en-GB',
+    language: 'en',
+    gender: 'neutral'
+  },
+  {
+    name: 'es-ES',
+    language: 'es',
+    gender: 'neutral'
+  },
+  {
+    name: 'de-DE',
+    language: 'de',
+    gender: 'neutral'
+  },
+  {
+    name: 'en-GB',
+    language: 'en',
+    gender: 'neutral'
+  },
+  {
+    name: 'fr-FR',
+    language: 'fr',
+    gender: 'neutral'
+  },
+  {
+    name: 'it-IT',
+    language: 'it',
+    gender: 'neutral'
+  }
+]
+
 class PicoTTS {
-  build () {
+  async voices () {
+    return voicesList
   }
 
-  async tts ({ language, text }) {
-    const envVarCmd = `BOTIUM_SPEECH_PICO_CMDPREFIX_${language.toUpperCase()}`
-    if (!process.env[envVarCmd]) throw new Error(`Environment variable ${envVarCmd} empty`)
+  async tts ({ language, voice, text }) {
+    const picoVoice = voicesList.find(v => {
+      if (language && v.language !== language) return false
+      if (voice && v.name !== voice) return false
+      return true
+    })
+    if (!picoVoice) throw new Error(`Voice <${voice || 'default'}> for language <${language}> not available`)
 
     return new Promise((resolve, reject) => {
       const output = `/tmp/${uuidv1()}.wav`
 
-      const cmdLinePico = Mustache.render(process.env[envVarCmd], { output })
+      const cmdLinePico = `${process.env.BOTIUM_SPEECH_PICO_CMDPREFIX || 'pico2wave'} --lang=${picoVoice.name} --wave=${output}`
       debug(`cmdLinePico: ${cmdLinePico}`)
       const cmdLinePicoParts = cmdLinePico.split(' ')
       const pico = spawn(cmdLinePicoParts[0], cmdLinePicoParts.slice(1).concat([text]))

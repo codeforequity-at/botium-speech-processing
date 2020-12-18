@@ -50,7 +50,7 @@
         "parameters": [
           {
             "name": "language",
-            "description": "ISO-639-1 language code",
+            "description": "ISO-639-1 language code (2 letters)",
             "in": "path",
             "required": true,
             "schema": {
@@ -105,6 +105,61 @@
         }
       }
     },
+    "/api/ttsvoices": {
+      "get": {
+        "description": "Get list of voices",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tts",
+            "description": "Text-to-speech backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "marytts",
+                "picotts"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of supported voices",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "language": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": [
+                      "male",
+                      "female",
+                      "neutral"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tts/{language}": {
       "get": {
         "description": "Convert text file to audio",
@@ -119,7 +174,7 @@
         "parameters": [
           {
             "name": "language",
-            "description": "ISO-639-1 language code",
+            "description": "ISO-639-1 language code (2 letters)",
             "in": "path",
             "required": true,
             "schema": {
@@ -136,6 +191,15 @@
             }
           },
           {
+            "name": "voice",
+            "description": "Voice name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "tts",
             "description": "Text-to-speech backend",
             "in": "query",
@@ -143,6 +207,7 @@
             "schema": {
               "type": "string",
               "enum": [
+                "google",
                 "marytts",
                 "picotts"
               ]

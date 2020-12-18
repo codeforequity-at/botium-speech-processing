@@ -29,8 +29,8 @@ services:
     volumes:
       - "./logs/stt_de:/opt/logs"
   tts:
-    image: botium/botium-speech-marytts
+    image: botium/botium-speech-marytts:latest
     restart: always
   dictate:
-    image: botium/botium-speech-dictate
+    image: botium/botium-speech-dictate:latest
     restart: always
