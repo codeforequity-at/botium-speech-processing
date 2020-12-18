@@ -4,7 +4,7 @@ VERSION := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || t
 docker_build_develop:
 	docker build -t botium/botium-speech-frontend:develop frontend
 	docker build -t botium/botium-speech-watcher:develop watcher
-	docker build -f stt/Dockerfile.kaldi.en -t botium/botium-speech-kaldi-en:develop) stt
+	docker build -f stt/Dockerfile.kaldi.en -t botium/botium-speech-kaldi-en:develop stt
 	docker build -f stt/Dockerfile.kaldi.de -t botium/botium-speech-kaldi-de:develop stt
 	docker build -f tts/Dockerfile.marytts -t botium/botium-speech-marytts:develop tts
 	docker build -t botium/botium-speech-dictate:develop dictate
