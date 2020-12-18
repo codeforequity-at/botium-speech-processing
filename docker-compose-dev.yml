@@ -14,14 +14,14 @@ services:
     restart: always
     volumes:
       - "./frontend/resources:/app/resources"
-#  watcher:
-#    build:
-#      context: watcher
-#    image: botium/botium-speech-watcher:develop
-#    restart: always
-#    volumes:
-#      - "./watcher:/app/watch"
-#      - "./logs/watcher:/app/logs"
+  watcher:
+    build:
+      context: watcher
+    image: botium/botium-speech-watcher:develop
+    restart: always
+    volumes:
+      - "./watcher:/app/watch"
+      - "./logs/watcher:/app/logs"
   stt_en:
     build:
       context: stt
@@ -38,12 +38,12 @@ services:
     restart: always
     volumes:
       - "./logs/stt_de:/opt/logs"
-#  tts:
-#    build:
-#      context: tts
-#      dockerfile: Dockerfile.marytts
-#    image: botium/botium-speech-marytts:develop
-#    restart: always
+  tts:
+    build:
+      context: tts
+      dockerfile: Dockerfile.marytts
+    image: botium/botium-speech-marytts:develop
+    restart: always
   dictate:
     build:
       context: dictate
