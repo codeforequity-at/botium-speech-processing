@@ -1,35 +1,28 @@
-const fs = require('fs')
-const uuidv1 = require('uuid/v1')
+const { v1: uuidv1 } = require('uuid')
 const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech')
 const storage = require('@google-cloud/storage')
-const debug = require('debug')('botium-speech-processing-google')
+const debug = require('debug')('botium-speech-processing-google-stt')
 
-const credentialsPath = process.env.BOTIUM_SPEECH_GOOGLE_KEYFILE || './resources/google.json'
+const { googleOptions } = require('../utils')
 
-class Google {
+class GoogleSTT {
   async stt ({ language, buffer }) {
-    if (!fs.existsSync(credentialsPath)) throw new Error(`Google Cloud credentials file "${credentialsPath}" not found`)
-
-    const envVarConfig = `BOTIUM_SPEECH_GOOGLE_CONFIG_${language.toUpperCase()}`
-    if (!process.env[envVarConfig]) throw new Error(`Environment variable ${envVarConfig} empty`)
-
-    let config = null
-    try {
-      config = JSON.parse(process.env[envVarConfig])
-    } catch (err) {
-      throw new Error(`Google Cloud credentials config in ${envVarConfig} invalid: ${err.message}`)
-    }
-
-    const speechClient = new speech.SpeechClient({
-      keyFilename: credentialsPath
-    })
-    const storageClient = new storage.Storage({
-      keyFilename: credentialsPath
-    })
+    const speechClient = new speech.SpeechClient(googleOptions())
+    const storageClient = new storage.Storage(googleOptions())
 
     const request = {
-      config,
+      config: {
+        languageCode: language
+      },
       audio: {
+      }
+    }
+    if (process.env.BOTIUM_SPEECH_GOOGLE_CONFIG) {
+      try {
+        const defaultConfig = JSON.parse(process.env.BOTIUM_SPEECH_GOOGLE_CONFIG)
+        Object.assign(request.config, defaultConfig)
+      } catch (err) {
+        throw new Error(`Google Speech config in BOTIUM_SPEECH_GOOGLE_CONFIG invalid: ${err.message}`)
       }
     }
 
@@ -93,4 +86,4 @@ class Google {
   }
 }
 
-module.exports = Google
+module.exports = GoogleSTT

@@ -3,7 +3,7 @@ const Mustache = require('mustache')
 const request = require('request-promise-native')
 const debug = require('debug')('botium-speech-processing-kaldi')
 
-class Kaldi {
+class KaldiSTT {
   async stt ({ language, buffer }) {
     const envVarUrl = `BOTIUM_SPEECH_KALDI_URL_${language.toUpperCase()}`
     if (!process.env[envVarUrl]) throw new Error(`Environment variable ${envVarUrl} empty`)
@@ -47,4 +47,4 @@ class Kaldi {
   }
 }
 
-module.exports = Kaldi
+module.exports = KaldiSTT
