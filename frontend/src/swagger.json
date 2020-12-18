@@ -229,6 +229,30 @@
         }
       }
     },
+    "/api/convertprofiles": {
+      "get": {
+        "description": "Get list of audio conversion profile",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of supported audio conversion profiles",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/convert/{profile}": {
       "post": {
         "description": "Convert audio file",
@@ -272,7 +296,7 @@
         "requestBody": {
           "description": "Audio file",
           "content": {
-            "audio/*": {
+            "audio/wav": {
               "schema": {
                 "type": "string",
                 "format": "binary"

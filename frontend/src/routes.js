@@ -4,7 +4,7 @@ const mkdirp = require('mkdirp')
 const crypto = require('crypto')
 const express = require('express')
 const sanitize = require('sanitize-filename')
-const { runsox } = require('./convert/sox')
+const { runconvert } = require('./convert/convert')
 const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
 
@@ -291,6 +291,27 @@ router.get('/api/tts/:language', async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/convertprofiles:
+ *   get:
+ *     description: Get list of audio conversion profile
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     responses:
+ *       200:
+ *         description: List of supported audio conversion profiles
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ */
+router.get('/api/convertprofiles', async (req, res, next) => {
+  res.json(Object.keys(process.env).filter(e => e.startsWith('BOTIUM_SPEECH_CONVERT_PROFILE_') && e.endsWith('_CMD')).map(e => e.split('_')[4]))
+})
+
+/**
+ * @swagger
  * /api/convert/{profile}:
  *   post:
  *     description: Convert audio file
@@ -320,7 +341,7 @@ router.get('/api/tts/:language', async (req, res, next) => {
  *     requestBody:
  *       description: Audio file
  *       content:
- *         audio/*:
+ *         audio/wav:
  *           schema:
  *             type: string
  *             format: binary
@@ -334,12 +355,13 @@ router.get('/api/tts/:language', async (req, res, next) => {
  *               format: binary
  */
 router.post('/api/convert/:profile', async (req, res, next) => {
+  console.log(req.body)
   if (!Buffer.isBuffer(req.body)) {
     return next(new Error('req.body is not a buffer'))
   }
-  const envVarSox = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_SOX`
-  if (!process.env[envVarSox]) {
-    return next(new Error(`Environment variable ${envVarSox} empty`))
+  const envVarCmd = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_CMD`
+  if (!process.env[envVarCmd]) {
+    return next(new Error(`Environment variable ${envVarCmd} empty`))
   }
   const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
   if (!process.env[envVarOutput]) {
@@ -347,7 +369,7 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   }
 
   try {
-    const outputBuffer = await runsox(process.env[envVarSox], { inputBuffer: req.body, start: req.query.start, end: req.query.end })
+    const outputBuffer = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: req.body, start: req.query.start, end: req.query.end })
     res.writeHead(200, {
       'Content-disposition': `attachment; filename="${process.env[envVarOutput]}"`,
       'Content-Length': outputBuffer.length
