@@ -8,35 +8,30 @@ services:
     ports:
       - 80:80
   frontend:
-    image: botium/botium-speech-frontend:${TAG}
+    image: botium/botium-speech-frontend:latest
     restart: always
     environment:
       BOTIUM_API_TOKENS: 
-      BOTIUM_SPEECH_PROVIDER_TTS: marytts
+      BOTIUM_SPEECH_PROVIDER_TTS: picotts
       BOTIUM_SPEECH_PROVIDER_STT: kaldi
-      BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL:
-      BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
     volumes:
       - "./frontend/resources:/app/resources"
   watcher:
-    image: botium/botium-speech-watcher:${TAG}
+    image: botium/botium-speech-watcher:latest
     restart: always
     volumes:
       - "./watcher:/app/watch"
       - "./logs/watcher:/app/logs"
   stt_en:
-    image: botium/botium-speech-kaldi-en:${TAG}
+    image: botium/botium-speech-kaldi-en:latest
     restart: always
     volumes:
       - "./logs/stt_en:/opt/logs"
   stt_de:
-    image: botium/botium-speech-kaldi-de:${TAG}
+    image: botium/botium-speech-kaldi-de:latest
     restart: always
     volumes:
       - "./logs/stt_de:/opt/logs"
-  tts:
-    image: botium/botium-speech-marytts:${TAG}
-    restart: always
   dictate:
-    image: botium/botium-speech-dictate:${TAG}
+    image: botium/botium-speech-dictate:latest
     restart: always

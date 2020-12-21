@@ -6,11 +6,6 @@
 
 Botium Speech Processing is a unified, developer-friendly API to the best available free and Open-Source Speech-To-Text and Text-To-Speech services.
 
-**UPDATE 2020/06/15:** As Chatbots grow in importance, automated testing solutions will remain critical for ensuring that Chatbots actually do what their designers intend. We've been busy working on a product that allows testers to have visual insights and deeper understanding in their Chatbot's performance, offering several solutions to boost their interaction!
-[Botium Coach will be introduced to the market as part of our online event on the 24th of June.](https://www.botium.ai/coach/)
-
-[![](http://img.youtube.com/vi/WsNaDfZ7WHk/0.jpg)](http://www.youtube.com/watch?v=WsNaDfZ7WHk "Botium Coach is coming on 24th of June")
-
 ## What is it ?
 
 Botium Speech Processing is a *get-shit-done*-style Open-Source software stack, the configuration options are rudimentary: it is highly opinionated about the included tools, just get the shit done.
@@ -49,10 +44,11 @@ Clone or download this repository and start with docker-compose:
 
     > docker-compose up -d
 
-This will download the prebuilt images from Dockerhub.
+This will download the latest released prebuilt images from Dockerhub. To download the latest developer images from Dockerhub:
+
+    > docker-compose --env-file .env.develop up
 
 Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
-
 
 ### Optional: Build Docker Images
 
@@ -157,6 +153,12 @@ This project is standing on the shoulders of giants.
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
 
 ## Changelog
+
+### 2020-12-18
+
+* Adding support for Google Text-To-Speech
+* Adding support for listing and using available TTS voices
+* Added sample docker-compose configurations for PicoTTS and Google
 
 ### 2020-03-05
 
