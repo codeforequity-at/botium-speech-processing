@@ -44,10 +44,11 @@ Clone or download this repository and start with docker-compose:
 
     > docker-compose up -d
 
-This will download the prebuilt images from Dockerhub.
+This will download the latest released prebuilt images from Dockerhub. To download the latest developer images from Dockerhub:
+
+    > docker-compose --env-file .env.develop up
 
 Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
-
 
 ### Optional: Build Docker Images
 

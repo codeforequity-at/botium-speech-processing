@@ -7,6 +7,7 @@ WORKDIR /app
 COPY ./package.json /app/package.json
 RUN npm install --no-optional --production
 COPY . /app
+COPY ./resources/.env /app/.env
 RUN find . -type f ! -path '*/node_modules/*' -print0 | xargs -0 dos2unix
 
 VOLUME /app/resources
