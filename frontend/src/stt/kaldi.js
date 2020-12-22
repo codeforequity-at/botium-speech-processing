@@ -1,9 +1,15 @@
 const util = require('util')
+const _ = require('lodash')
 const Mustache = require('mustache')
 const request = require('request-promise-native')
 const debug = require('debug')('botium-speech-processing-kaldi')
 
 class KaldiSTT {
+  async languages () {
+    const envKeys = Object.keys(process.env).filter(k => k.startsWith('BOTIUM_SPEECH_KALDI_URL_'))
+    return _.uniq(envKeys.map(k => k.split('_')[4].toLowerCase())).sort()
+  }
+
   async stt ({ language, buffer }) {
     const envVarUrl = `BOTIUM_SPEECH_KALDI_URL_${language.toUpperCase()}`
     if (!process.env[envVarUrl]) throw new Error(`Environment variable ${envVarUrl} empty`)

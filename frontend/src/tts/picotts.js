@@ -1,4 +1,5 @@
 const fs = require('fs')
+const _ = require('lodash')
 const { spawn } = require('child_process')
 const { v1: uuidv1 } = require('uuid')
 const debug = require('debug')('botium-speech-processing-picotts')
@@ -7,13 +8,13 @@ const { ttsFilename } = require('../utils')
 
 const voicesList = [
   {
-    name: 'en-EN',
-    language: 'en',
+    name: 'en-US',
+    language: 'en-US',
     gender: 'neutral'
   },
   {
     name: 'en-GB',
-    language: 'en',
+    language: 'en-GB',
     gender: 'neutral'
   },
   {
@@ -24,11 +25,6 @@ const voicesList = [
   {
     name: 'de-DE',
     language: 'de',
-    gender: 'neutral'
-  },
-  {
-    name: 'en-GB',
-    language: 'en',
     gender: 'neutral'
   },
   {
@@ -48,9 +44,13 @@ class PicoTTS {
     return voicesList
   }
 
+  async languages () {
+    return _.uniq(voicesList.map(v => v.language)).sort()
+  }
+
   async tts ({ language, voice, text }) {
     const picoVoice = voicesList.find(v => {
-      if (language && v.language !== language) return false
+      if (language && !v.language.startsWith(language)) return false
       if (voice && v.name !== voice) return false
       return true
     })

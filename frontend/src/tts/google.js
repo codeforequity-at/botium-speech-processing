@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const textToSpeech = require('@google-cloud/text-to-speech')
 const debug = require('debug')('botium-speech-processing-google-tts')
 
@@ -26,11 +27,16 @@ class GoogleTTS {
         googleVoices.push({
           name: voice.name,
           gender: genderMap[voice.ssmlGender],
-          language: languageCode.split('-')[0]
+          language: languageCode
         })
       })
     })
     return googleVoices
+  }
+
+  async languages () {
+    const voicesList = await this.voices()
+    return _.uniq(voicesList.map(v => v.language)).sort()
   }
 
   async tts ({ language, voice, text }) {

@@ -1,11 +1,40 @@
+const _ = require('lodash')
 const { v1: uuidv1 } = require('uuid')
 const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech')
 const storage = require('@google-cloud/storage')
+const request = require('request-promise-native')
+const cheerio = require('cheerio')
 const debug = require('debug')('botium-speech-processing-google-stt')
 
 const { googleOptions } = require('../utils')
 
+const GOOGLE_STT_LANGUAGES_URL = 'https://cloud.google.com/speech-to-text/docs/languages'
+const downloadLanguageCodes = async () => {
+  debug(`Downloading language codes from ${GOOGLE_STT_LANGUAGES_URL}`)
+  const htmlString = await request(GOOGLE_STT_LANGUAGES_URL)
+  const $ = cheerio.load(htmlString)
+
+  const languageCodes = []
+  $('#lang-table-container table tbody tr').each(function () {
+    const tds = $(this).find('td')
+    const languageCode = $(tds[1]).text().trim()
+    if (languageCode) {
+      languageCodes.push(languageCode)
+    }
+  })
+  return languageCodes
+}
+
+let languageCodes = null
+
 class GoogleSTT {
+  async languages () {
+    if (!languageCodes) {
+      languageCodes = _.uniq(await downloadLanguageCodes()).sort()
+    }
+    return languageCodes
+  }
+
   async stt ({ language, buffer }) {
     const speechClient = new speech.SpeechClient(googleOptions())
     const storageClient = new storage.Storage(googleOptions())

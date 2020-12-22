@@ -36,6 +36,45 @@
         }
       }
     },
+    "/api/sttlanguages": {
+      "get": {
+        "description": "Get list of STT languages",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "stt",
+            "description": "Speech-to-text backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kaldi",
+                "google"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of supported STT languages",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/stt/{language}": {
       "post": {
         "description": "Convert audio file to text",
@@ -50,7 +89,7 @@
         "parameters": [
           {
             "name": "language",
-            "description": "ISO-639-1 language code (2 letters)",
+            "description": "Language code (as returned from sttlanguages endpoint)",
             "in": "path",
             "required": true,
             "schema": {
@@ -160,6 +199,46 @@
         }
       }
     },
+    "/api/ttslanguages": {
+      "get": {
+        "description": "Get list of TTS languages",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "tts",
+            "description": "Text-to-speech backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "marytts",
+                "picotts"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of supported TTS languages",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tts/{language}": {
       "get": {
         "description": "Convert text file to audio",
@@ -174,7 +253,7 @@
         "parameters": [
           {
             "name": "language",
-            "description": "ISO-639-1 language code (2 letters)",
+            "description": "Language code (as returned from ttslanguages endpoint)",
             "in": "path",
             "required": true,
             "schema": {
