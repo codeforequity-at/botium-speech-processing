@@ -35,11 +35,16 @@ class MaryTTS {
     return maryVoices
   }
 
+  async languages () {
+    const voicesList = await this.voices()
+    return _.uniq(voicesList.map(v => v.language)).sort()
+  }
+
   async tts ({ language, voice, text }) {
     const voicesList = await this.voices()
 
     const maryVoice = voicesList.find(v => {
-      if (language && v.language !== language) return false
+      if (language && !v.language.startsWith(language)) return false
       if (voice && v.name !== voice) return false
       return true
     })

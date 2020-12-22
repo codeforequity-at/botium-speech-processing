@@ -10,8 +10,8 @@ const debug = require('debug')('botium-speech-processing-routes')
 
 const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')
 const cachePathTts = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'tts')
-const cacheKeyStt = (data, language, ext) => `${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`
-const cacheKeyTts = (data, language, voice, ext) => `${crypto.createHash('md5').update(data).digest('hex')}_${language}_${voice || 'default'}${ext}`
+const cacheKeyStt = (data, language, ext) => sanitize(`${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`)
+const cacheKeyTts = (data, language, voice, ext) => sanitize(`${crypto.createHash('md5').update(data).digest('hex')}_${language}_${voice || 'default'}${ext}`)
 
 if (cachePathStt) mkdirp.sync(cachePathStt)
 if (cachePathTts) mkdirp.sync(cachePathTts)
@@ -66,6 +66,40 @@ router.get('/api/status', (req, res) => {
 
 /**
  * @swagger
+ * /api/sttlanguages:
+ *   get:
+ *     description: Get list of STT languages
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: stt
+ *         description: Speech-to-text backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [kaldi, google]
+ *     responses:
+ *       200:
+ *         description: List of supported STT languages
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ */
+router.get('/api/sttlanguages', async (req, res, next) => {
+  try {
+    const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
+    res.json(await stt.languages())
+  } catch (err) {
+    return next(err)
+  }
+})
+
+/**
+ * @swagger
  * /api/stt/{language}:
  *   post:
  *     description: Convert audio file to text
@@ -75,7 +109,7 @@ router.get('/api/status', (req, res) => {
  *       - application/json
  *     parameters:
  *       - name: language
- *         description: ISO-639-1 language code (2 letters)
+ *         description: Language code (as returned from sttlanguages endpoint)
  *         in: path
  *         required: true
  *         schema:
@@ -194,6 +228,40 @@ router.get('/api/ttsvoices', async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/ttslanguages:
+ *   get:
+ *     description: Get list of TTS languages
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: tts
+ *         description: Text-to-speech backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [google, marytts, picotts]
+ *     responses:
+ *       200:
+ *         description: List of supported TTS languages
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ */
+router.get('/api/ttslanguages', async (req, res, next) => {
+  try {
+    const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+    res.json(await tts.languages())
+  } catch (err) {
+    return next(err)
+  }
+})
+
+/**
+ * @swagger
  * /api/tts/{language}:
  *   get:
  *     description: Convert text file to audio
@@ -203,7 +271,7 @@ router.get('/api/ttsvoices', async (req, res, next) => {
  *       - audio/wav
  *     parameters:
  *       - name: language
- *         description: ISO-639-1 language code (2 letters)
+ *         description: Language code (as returned from ttslanguages endpoint)
  *         in: path
  *         required: true
  *         schema:
