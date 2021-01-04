@@ -6,9 +6,20 @@ const debug = require('debug')('botium-speech-processing-convert')
 
 const runconvert = (cmdLine, outputFile, { inputBuffer, start, end }) => {
   return new Promise((resolve, reject) => {
-    const output = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${uuidv1()}_${outputFile}`
+    const jobId = uuidv1()
 
-    let cmdLineFull = Mustache.render(cmdLine, { output })
+    const output = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${jobId}_${outputFile}`
+    const input = cmdLine.indexOf('{{{input}}}') >= 0 ? `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${jobId}_input` : null
+
+    if (input) {
+      try {
+        fs.writeFileSync(input, inputBuffer)
+      } catch (err) {
+        reject(new Error(`conversion process input file ${input} not writable: ${err.message}`))
+      }
+    }
+
+    let cmdLineFull = Mustache.render(cmdLine, { output, input })
     if (start && end) {
       cmdLineFull = `${cmdLineFull} trim ${start} ${end}`
     } else if (start && !end) {
@@ -32,6 +43,13 @@ const runconvert = (cmdLine, outputFile, { inputBuffer, start, end }) => {
       } else {
         reject(new Error(`conversion process exited with code ${code}, signal ${signal}`))
       }
+      if (input) {
+        try {
+          fs.unlinkSync(input)
+        } catch (err) {
+          debug(`conversion process input file ${input} not deleted: ${err.message}`)
+        }
+      }
     })
     childProcess.once('error', (err) => {
       debug(`conversion process failed: ${err.message}`)
@@ -50,7 +68,9 @@ const runconvert = (cmdLine, outputFile, { inputBuffer, start, end }) => {
       debug('stderr ' + data)
     })
 
-    childProcess.stdin.write(inputBuffer)
+    if (!input) {
+      childProcess.stdin.write(inputBuffer)
+    }
     childProcess.stdin.end()
   })
 }

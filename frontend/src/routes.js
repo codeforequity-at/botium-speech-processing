@@ -372,10 +372,19 @@ router.get('/api/tts/:language', async (req, res, next) => {
  *         schema:
  *           type: array
  *           items:
- *             type: string
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
  */
 router.get('/api/convertprofiles', async (req, res, next) => {
-  res.json(Object.keys(process.env).filter(e => e.startsWith('BOTIUM_SPEECH_CONVERT_PROFILE_') && e.endsWith('_CMD')).map(e => e.split('_')[4]))
+  const keys = Object.keys(process.env).filter(e => e.startsWith('BOTIUM_SPEECH_CONVERT_PROFILE_') && e.endsWith('_CMD')).map(e => e.split('_')[4])
+  return res.json(keys.map(key => ({
+    name: key,
+    description: process.env[`BOTIUM_SPEECH_CONVERT_PROFILE_${key}_DESC`] || ''
+  })))
 })
 
 /**
@@ -423,7 +432,6 @@ router.get('/api/convertprofiles', async (req, res, next) => {
  *               format: binary
  */
 router.post('/api/convert/:profile', async (req, res, next) => {
-  console.log(req.body)
   if (!Buffer.isBuffer(req.body)) {
     return next(new Error('req.body is not a buffer'))
   }
@@ -432,14 +440,11 @@ router.post('/api/convert/:profile', async (req, res, next) => {
     return next(new Error(`Environment variable ${envVarCmd} empty`))
   }
   const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
-  if (!process.env[envVarOutput]) {
-    return next(new Error(`Environment variable ${envVarOutput} empty`))
-  }
 
   try {
-    const outputBuffer = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: req.body, start: req.query.start, end: req.query.end })
+    const outputBuffer = await runconvert(process.env[envVarCmd], process.env[envVarOutput] || 'output.wav', { inputBuffer: req.body, start: req.query.start, end: req.query.end })
     res.writeHead(200, {
-      'Content-disposition': `attachment; filename="${process.env[envVarOutput]}"`,
+      'Content-disposition': `attachment; filename="${process.env[envVarOutput] || 'output.wav'}"`,
       'Content-Length': outputBuffer.length
     })
     res.end(outputBuffer)
