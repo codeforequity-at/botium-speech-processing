@@ -442,9 +442,9 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
 
   try {
-    const outputBuffer = await runconvert(process.env[envVarCmd], process.env[envVarOutput] || 'output.wav', { inputBuffer: req.body, start: req.query.start, end: req.query.end })
+    const { outputName, outputBuffer } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: req.body, start: req.query.start, end: req.query.end })
     res.writeHead(200, {
-      'Content-disposition': `attachment; filename="${process.env[envVarOutput] || 'output.wav'}"`,
+      'Content-disposition': `attachment; filename="${outputName}"`,
       'Content-Length': outputBuffer.length
     })
     res.end(outputBuffer)
