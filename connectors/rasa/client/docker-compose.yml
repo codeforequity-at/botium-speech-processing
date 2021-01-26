@@ -6,6 +6,7 @@ services:
       args:
         RASA_ENDPOINT: https://demo.botiumbox.com
         RASA_PATH: /rasa-demo/socket.io
+        PUBLIC_PATH: /rasa-demo-voice/
     image: botium/botium-speech-rasa-voice
     restart: always
     ports:

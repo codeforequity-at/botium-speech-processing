@@ -1,6 +1,7 @@
 FROM node:lts-alpine
 ARG RASA_ENDPOINT=http://localhost:5005
 ARG RASA_PATH=/socket.io
+ARG PUBLIC_PATH=/
 
 RUN apk add --no-cache --virtual .build-deps curl sed python make g++
 
@@ -9,7 +10,7 @@ RUN curl -L -o rvi.zip "https://github.com/RasaHQ/rasa-voice-interface/archive/m
 WORKDIR /app/rasa-voice-interface-master
 RUN chown -R node /app/rasa-voice-interface-master \
   && sed -i "s|'http://localhost:5005'|'${RASA_ENDPOINT}', options: { path: '${RASA_PATH}' }|g" src/main.js \
-  && sed -i "s|integrity: false|integrity: false, publicPath: '/rasa-demo-voice/'|g" vue.config.js \
+  && sed -i "s|integrity: false|integrity: false, publicPath: '${PUBLIC_PATH}'|g" vue.config.js \
   && npm install --no-optional && npm install serve && npm run-script build
 RUN apk del .build-deps
 
