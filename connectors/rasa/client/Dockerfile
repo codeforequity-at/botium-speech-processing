@@ -9,10 +9,10 @@ RUN curl -L -o rvi.zip "https://github.com/RasaHQ/rasa-voice-interface/archive/m
 WORKDIR /app/rasa-voice-interface-master
 RUN chown -R node /app/rasa-voice-interface-master \
   && sed -i "s|'http://localhost:5005'|'${RASA_ENDPOINT}', options: { path: '${RASA_PATH}' }|g" src/main.js \
-  && sed -i "s|integrity: false|integrity: false, devServer: { disableHostCheck: true }|g" vue.config.js \
-  && npm install --no-optional
+  && sed -i "s|integrity: false|integrity: false, publicPath: '/rasa-demo-voice/'|g" vue.config.js \
+  && npm install --no-optional && npm install serve && npm run-script build
 RUN apk del .build-deps
 
 EXPOSE 8080
 USER node
-CMD npm run serve
+CMD PORT=8080 npx serve -s dist
