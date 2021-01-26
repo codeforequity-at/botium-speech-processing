@@ -24,6 +24,7 @@ Some examples what you can do with this:
 
 * Synthesize audio tracks for Youtube tutorials
 * Build voice-enabled chatbot services (for example, IVR systems)
+  * see the [Rasa Custom Voice Channel](./connectors/rasa)
 * Classification of audio file transcriptions
 * [Automated Testing](https://chatbotslife.com/testing-alexa-skills-with-avs-mocha-and-botium-f6c22549f66e) of Voice services with [Botium](https://medium.com/@floriantreml/botium-in-a-nutshell-part-1-overview-f8d0ceaf8fb4)
 
@@ -153,6 +154,11 @@ This project is standing on the shoulders of giants.
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
 
 ## Changelog
+
+### 2021-01-26
+
+* Added several profiles for adding noise or other audio artifacts to your files
+* Added custom channel for usage with Rasa
 
 ### 2020-12-18
 
