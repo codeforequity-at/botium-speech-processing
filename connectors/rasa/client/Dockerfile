@@ -9,6 +9,7 @@ RUN curl -L -o rvi.zip "https://github.com/RasaHQ/rasa-voice-interface/archive/m
 WORKDIR /app/rasa-voice-interface-master
 RUN chown -R node /app/rasa-voice-interface-master \
   && sed -i "s|'http://localhost:5005'|'${RASA_ENDPOINT}', options: { path: '${RASA_PATH}' }|g" src/main.js \
+  && sed -i "s|integrity: false|integrity: false, devServer: { disableHostCheck: true }|g" vue.config.js \
   && npm install --no-optional
 RUN apk del .build-deps
 
