@@ -33,7 +33,7 @@ services:
     environment:
       PYTHONPATH: "/app/connectors/rasa:/app"
       RASA_DUCKLING_HTTP_URL: http://rasa-duckling:8000
-    command: run -vv --cors "*" --credentials /app/connectors/rasa/credentials.yml --enable-api --model models/dialogue --endpoints endpoints.yml -t B0tium1234
+    command: run -vv --cors "*" --credentials /app/connectors/rasa/credentials.yml --enable-api --model models/dialogue --endpoints endpoints.yml
   rasa-actions:
     build:
       context: .
