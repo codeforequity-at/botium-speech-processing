@@ -16,8 +16,6 @@ import json
 
 logger = logging.getLogger(__name__)
 
-print('Hello from SocketVoice')
-
 class SocketVoiceBlueprint(Blueprint):
     def __init__(self, sio: AsyncServer, socketio_path, *args, **kwargs):
         self.sio = sio
@@ -248,7 +246,7 @@ class SocketIOVoiceInput(InputChannel):
             else:
                 sender_id = sid
 
-            if data['message'].startswith('data:'):
+            if data['message'] and data['message'].startswith('data:'):
                 header, encoded = data['message'].split(",", 1)
 
                 audioData = base64.b64decode(encoded.encode('ascii'))
