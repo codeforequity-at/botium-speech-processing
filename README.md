@@ -101,8 +101,8 @@ There are Websocket endpoints exposed for real-time audio decoding. Find the API
 
 The Websocket endpoints are:
 
-* English: ws://127.0.0.1/stt_en/client/ws/speech
-* German: ws://127.0.0.1/stt_de/client/ws/speech
+* English: ws://127.0.0.1/stt-en/client/ws/speech
+* German: ws://127.0.0.1/stt-de/client/ws/speech
 
 ## File System Watcher
 
