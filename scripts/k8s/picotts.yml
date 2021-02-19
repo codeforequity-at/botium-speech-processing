@@ -1,0 +1,302 @@
+
+# Source: botium-speech-processing/templates/01-secrets.yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: botium-speech-processing-secrets
+  labels:
+    name: secrets
+    app: botium-speech-processing
+stringData:
+  AUTH_APIKEYS: ""
+type: Opaque
+---
+# Source: botium-speech-processing/templates/02-configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: botium-speech-processing-configmap
+  labels:
+    name: config
+    app: botium-speech-processing
+data:
+  BOTIUM_SPEECH_PROVIDER_TTS: "picotts"
+  BOTIUM_SPEECH_PROVIDER_STT: "kaldi"
+  BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL: ""
+  BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY: ""
+---
+# Source: botium-speech-processing/templates/03-volumes.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: botium-speech-processing-claim
+  labels:
+    name: botium-speech-processing-claim
+    app: botium-speech-processing
+    tier: frontend
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: <<Placeholder BOTIUM_SPEECH_PROCESSING_STORAGE_CLASS>>
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Source: botium-speech-processing/templates/04-frontend.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 56000
+      targetPort: 56000
+  selector:
+    name: frontend
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/05-stt_en.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: stt-en
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    name: stt-en
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/06-stt_de.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: stt-de
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    name: stt-de
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/08-dictate.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: dictate
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 56100
+      targetPort: 56100
+  selector:
+    name: dictate
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/04-frontend.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    name: frontend
+    app: botium-speech-processing
+    tier: frontend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: frontend
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: frontend
+        app: botium-speech-processing
+        tier: frontend
+    spec:
+      volumes:
+        - name: botium-speech-processing-storage
+          persistentVolumeClaim:
+            claimName: botium-speech-processing-claim
+      containers:
+        - name: frontend
+          image: botium/botium-speech-frontend:latest
+          ports:
+            - name: frontend-56000
+              containerPort: 56000
+          volumeMounts:
+            - mountPath: /app/resources
+              name: botium-speech-processing-storage
+          env:
+            - name: AUTH_APIKEYS
+              valueFrom:
+                secretKeyRef:
+                  name: botium-speech-processing-secrets
+                  key: AUTH_APIKEYS
+            - name: BOTIUM_SPEECH_PROVIDER_TTS
+              valueFrom:
+                configMapKeyRef:
+                  name: botium-speech-processing-configmap
+                  key: BOTIUM_SPEECH_PROVIDER_TTS
+            - name: BOTIUM_SPEECH_PROVIDER_STT
+              valueFrom:
+                configMapKeyRef:
+                  name: botium-speech-processing-configmap
+                  key: BOTIUM_SPEECH_PROVIDER_STT
+            - name: BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: botium-speech-processing-configmap
+                  key: BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL
+            - name: BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: botium-speech-processing-configmap
+                  key: BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY
+---
+# Source: botium-speech-processing/templates/05-stt_en.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stt-en
+  labels:
+    name: stt-en
+    app: botium-speech-processing
+    tier: stt-en
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: stt-en
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: stt-en
+        app: botium-speech-processing
+        tier: stt-en
+    spec:
+      volumes:
+        - name: botium-speech-processing-storage
+          persistentVolumeClaim:
+            claimName: botium-speech-processing-claim
+      containers:
+        - name: stt-en
+          image: botium/botium-speech-kaldi-en:latest
+          ports:
+            - name: stt-en
+              containerPort: 80
+          volumeMounts:
+            - mountPath: /opt/logs
+              name: botium-speech-processing-storage
+---
+# Source: botium-speech-processing/templates/06-stt_de.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stt-de
+  labels:
+    name: stt-de
+    app: botium-speech-processing
+    tier: stt-de
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: stt-de
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: stt-de
+        app: botium-speech-processing
+        tier: stt-de
+    spec:
+      volumes:
+        - name: botium-speech-processing-storage
+          persistentVolumeClaim:
+            claimName: botium-speech-processing-claim
+      containers:
+        - name: stt-de
+          image: botium/botium-speech-kaldi-de:latest
+          volumeMounts:
+            - mountPath: /opt/logs
+              name: botium-speech-processing-storage
+---
+# Source: botium-speech-processing/templates/08-dictate.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dictate
+  labels:
+    name: dictate
+    app: botium-speech-processing
+    tier: dictate
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: dictate
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: dictate
+        app: botium-speech-processing
+        tier: dictate
+    spec:
+      containers:
+        - name: dictate
+          image: botium/botium-speech-dictate:latest
+          ports:
+            - name: dictate-56100
+              containerPort: 56100
+---
+# Source: botium-speech-processing/templates/09-ingress.yml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: speech-processing-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    rancher.io/globalDNS.hostname: <<Placeholder FQDN>>
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            backend:
+              serviceName: frontend
+              servicePort: 56000
+          - path: /stt-en
+            backend:
+              serviceName: stt-en
+              servicePort: 80
+          - path: /stt-de
+            backend:
+              serviceName: stt-de
+              servicePort: 80
+          - path: /dictate
+            backend:
+              serviceName: dictate
+              servicePort: 56100
+      host: <<Placeholder FQDN>>
+

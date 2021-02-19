@@ -22,22 +22,22 @@ services:
     volumes:
       - "./watcher:/app/watch"
       - "./logs/watcher:/app/logs"
-  stt_en:
+  stt-en:
     build:
       context: stt
       dockerfile: Dockerfile.kaldi.en
     image: botium/botium-speech-kaldi-en:develop
     restart: always
     volumes:
-      - "./logs/stt_en:/opt/logs"
-  stt_de:
+      - "./logs/stt-en:/opt/logs"
+  stt-de:
     build:
       context: stt
       dockerfile: Dockerfile.kaldi.de
     image: botium/botium-speech-kaldi-de:develop
     restart: always
     volumes:
-      - "./logs/stt_de:/opt/logs"
+      - "./logs/stt-de:/opt/logs"
   tts:
     build:
       context: tts
