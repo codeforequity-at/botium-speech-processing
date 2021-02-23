@@ -1,0 +1,79 @@
+---
+# Source: botium-speech-processing/templates/04-frontend.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 56000
+      targetPort: 56000
+  selector:
+    name: frontend
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/04-frontend.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    name: frontend
+    app: botium-speech-processing
+    tier: frontend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: frontend
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: frontend
+        app: botium-speech-processing
+        tier: frontend
+    spec:
+      volumes:
+        - name: botium-speech-processing-storage
+          persistentVolumeClaim:
+            claimName: botium-speech-processing-claim
+      containers:
+        - name: frontend
+          image: botium/botium-speech-frontend:latest
+          ports:
+            - name: frontend-56000
+              containerPort: 56000
+          volumeMounts:
+            - mountPath: /app/resources
+              name: botium-speech-processing-storage
+          env:
+            - name: AUTH_APIKEYS
+              valueFrom:
+                secretKeyRef:
+                  name: botium-speech-processing-secrets
+                  key: AUTH_APIKEYS
+            - name: BOTIUM_SPEECH_PROVIDER_TTS
+              valueFrom:
+                configMapKeyRef:
+                  name: botium-speech-processing-configmap
+                  key: BOTIUM_SPEECH_PROVIDER_TTS
+            - name: BOTIUM_SPEECH_PROVIDER_STT
+              valueFrom:
+                configMapKeyRef:
+                  name: botium-speech-processing-configmap
+                  key: BOTIUM_SPEECH_PROVIDER_STT
+            - name: BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: botium-speech-processing-secrets
+                  key: BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL
+            - name: BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: botium-speech-processing-secrets
+                  key: BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY

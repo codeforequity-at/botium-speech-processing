@@ -1,0 +1,46 @@
+---
+# Source: botium-speech-processing/templates/08-dictate.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: dictate
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 56100
+      targetPort: 56100
+  selector:
+    name: dictate
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/08-dictate.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dictate
+  labels:
+    name: dictate
+    app: botium-speech-processing
+    tier: dictate
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: dictate
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: dictate
+        app: botium-speech-processing
+        tier: dictate
+    spec:
+      containers:
+        - name: dictate
+          image: botium/botium-speech-dictate:latest
+          ports:
+            - name: dictate-56100
+              containerPort: 56100

@@ -1,0 +1,17 @@
+---
+# Source: botium-speech-processing/templates/03-volumes.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: botium-speech-processing-claim
+  labels:
+    name: botium-speech-processing-claim
+    app: botium-speech-processing
+    tier: frontend
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: aws-efs
+  resources:
+    requests:
+      storage: 5Gi
