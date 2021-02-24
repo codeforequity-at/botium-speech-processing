@@ -1,0 +1,12 @@
+---
+# Source: botium-speech-processing/templates/02-configmap.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: botium-speech-processing-configmap
+  labels:
+    name: config
+    app: botium-speech-processing
+data:
+  BOTIUM_SPEECH_PROVIDER_TTS: "marytts"
+  BOTIUM_SPEECH_PROVIDER_STT: "kaldi"
