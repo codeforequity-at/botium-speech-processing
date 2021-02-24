@@ -1,0 +1,13 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        RASA_ENDPOINT: https://demo.botiumbox.com
+        RASA_PATH: /rasa-demo/socket.io
+        PUBLIC_PATH: /rasa-demo-voice/
+    image: botium/botium-speech-rasa-voice
+    restart: always
+    ports:
+      - 4700:8080

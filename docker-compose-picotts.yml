@@ -11,7 +11,7 @@ services:
     image: botium/botium-speech-frontend:latest
     restart: always
     environment:
-      BOTIUM_API_TOKENS: 
+      BOTIUM_API_TOKENS:
       BOTIUM_SPEECH_PROVIDER_TTS: picotts
       BOTIUM_SPEECH_PROVIDER_STT: kaldi
     volumes:
@@ -22,16 +22,16 @@ services:
     volumes:
       - "./watcher:/app/watch"
       - "./logs/watcher:/app/logs"
-  stt_en:
+  stt-en:
     image: botium/botium-speech-kaldi-en:latest
     restart: always
     volumes:
-      - "./logs/stt_en:/opt/logs"
-  stt_de:
+      - "./logs/stt-en:/opt/logs"
+  stt-de:
     image: botium/botium-speech-kaldi-de:latest
     restart: always
     volumes:
-      - "./logs/stt_de:/opt/logs"
+      - "./logs/stt-de:/opt/logs"
   dictate:
     image: botium/botium-speech-dictate:latest
     restart: always

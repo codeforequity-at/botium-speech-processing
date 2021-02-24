@@ -11,8 +11,8 @@ app.get('/demos/mob.html', (req, res) => {
   let mobHtml = fs.readFileSync(`${dictateDir}/demos/mob.html`, { encoding: 'utf-8' })
 
   const wsProtocol = (req.protocol === 'https' ? 'wss:' : 'ws:')
-  const sttUrlDe = process.env.STT_URL_DE || `${wsProtocol}//${req.hostname}/stt_de`
-  const sttUrlEn = process.env.STT_URL_EN || `${wsProtocol}//${req.hostname}/stt_en`
+  const sttUrlDe = process.env.STT_URL_DE || `${wsProtocol}//${req.hostname}/stt-de`
+  const sttUrlEn = process.env.STT_URL_EN || `${wsProtocol}//${req.hostname}/stt-en`
 
   mobHtml = mobHtml.replace(
     '<option value="wss://bark.phon.ioc.ee:8443/dev/duplex-speech-api/ws/speech|wss://bark.phon.ioc.ee:8443/dev/duplex-speech-api/ws/status">eesti keel</option>',
