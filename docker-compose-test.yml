@@ -1,0 +1,44 @@
+version: '3'
+services:
+#  watcher:
+#    build:
+#      context: watcher
+#    image: botium/botium-speech-watcher:latest
+#    user: 1000:1000
+#    restart: always
+#    volumes:
+#      - "./watcher:/app/watch"
+#      - "./logs/watcher:/app/logs"
+#  frontend:
+#    build:
+#      context: frontend
+#    image: botium/botium-speech-frontend:latest
+#    user: 1000:1000
+#    restart: always
+#    environment:
+#      BOTIUM_API_TOKENS:
+#      BOTIUM_SPEECH_PROVIDER_TTS: picotts
+#      BOTIUM_SPEECH_PROVIDER_STT: kaldi
+#    volumes:
+#      - "./frontend/resources:/app/resources"
+  stt_en:
+    build:
+      context: stt
+      dockerfile: Dockerfile.kaldi.en
+    image: botium/botium-speech-kaldi-en:latest
+    user: 1000:1000
+    restart: always
+    volumes:
+      - "./logs/stt_en:/opt/logs"
+#  dictate:
+#    build:
+#      context: dictate
+#    image: botium/botium-speech-dictate:latest
+#    user: 1000:1000
+#    restart: always
+#  tts:
+#    build:
+#      context: tts
+#      dockerfile: Dockerfile.marytts
+#    image: botium/botium-speech-marytts:${TAG}
+#    restart: always

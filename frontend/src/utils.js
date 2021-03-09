@@ -12,7 +12,7 @@ const wer = async (text1, text2) => {
 
 const ttsFilename = (text) => {
   const shortenedText = _.truncate(text, { length: 500 })
-  return sanitize(shortenedText)
+  return sanitize(shortenedText) || 'unknown'
 }
 
 const cleanEnv = (envName) => {

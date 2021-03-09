@@ -4,6 +4,7 @@ const mkdirp = require('mkdirp')
 const crypto = require('crypto')
 const express = require('express')
 const sanitize = require('sanitize-filename')
+const contentDisposition = require('content-disposition')
 const { runconvert } = require('./convert/convert')
 const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
@@ -317,7 +318,7 @@ router.get('/api/tts/:language', async (req, res, next) => {
           const buffer = fs.readFileSync(cacheFileBuffer)
           debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
           res.writeHead(200, {
-            'Content-disposition': `attachment; filename="${name}"`,
+            'Content-disposition': `${contentDisposition(name)}`,
             'Content-Length': buffer.length
           })
           return res.end(buffer)
@@ -335,7 +336,7 @@ router.get('/api/tts/:language', async (req, res, next) => {
         text: req.query.text
       })
       res.writeHead(200, {
-        'Content-disposition': `attachment; filename="${name}"`,
+        'Content-disposition': `${contentDisposition(name)}`,
         'Content-Length': buffer.length
       })
       res.end(buffer)
