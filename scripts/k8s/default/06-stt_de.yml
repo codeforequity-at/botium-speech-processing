@@ -1,0 +1,50 @@
+---
+# Source: botium-speech-processing/templates/06-stt_de.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: stt-de
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    name: stt-de
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/06-stt_de.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stt-de
+  labels:
+    name: stt-de
+    app: botium-speech-processing
+    tier: stt-de
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: stt-de
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: stt-de
+        app: botium-speech-processing
+        tier: stt-de
+    spec:
+      volumes:
+        - name: botium-speech-processing-storage
+          persistentVolumeClaim:
+            claimName: botium-speech-processing-claim
+      containers:
+        - name: stt-de
+          image: botium/botium-speech-kaldi-de:latest
+          volumeMounts:
+            - mountPath: /opt/logs
+              name: botium-speech-processing-storage
