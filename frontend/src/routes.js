@@ -9,16 +9,25 @@ const { runconvert } = require('./convert/convert')
 const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
 
-const cachePathStt = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')
-const cachePathTts = process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'tts')
+const cachePathStt = (process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')) || './resources/.cache/stt'
+const cachePathTts = (process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'tts')) || './resources/.cache/tts'
+const tmpPath = process.env.BOTIUM_SPEECH_TMP_DIR || './resources/.tmp'
 const cacheKeyStt = (data, language, ext) => sanitize(`${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`)
 const cacheKeyTts = (data, language, voice, ext) => sanitize(`${crypto.createHash('md5').update(data).digest('hex')}_${language}_${voice || 'default'}${ext}`)
+
+if (process.env.BOTIUM_SPEECH_CACHE_DIR === undefined) {
+  console.log(`ATTENTION: cache dir is not set, using ${cachePathStt} and ${cachePathTts} instead`)
+}
+
+if (process.env.BOTIUM_SPEECH_TMP_DIR === undefined) {
+  console.log(`ATTENTION: tmp dir is not set, using ${tmpPath} instead`)
+}
 
 if (cachePathStt) mkdirp.sync(cachePathStt)
 if (cachePathTts) mkdirp.sync(cachePathTts)
 
-if (process.env.BOTIUM_SPEECH_TMP_DIR) {
-  mkdirp.sync(process.env.BOTIUM_SPEECH_TMP_DIR)
+if (tmpPath) {
+  mkdirp.sync(tmpPath)
 }
 
 const ttsEngines = {
