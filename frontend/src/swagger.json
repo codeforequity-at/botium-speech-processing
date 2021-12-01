@@ -57,7 +57,8 @@
               "type": "string",
               "enum": [
                 "kaldi",
-                "google"
+                "google",
+                "ibm"
               ]
             }
           }
@@ -114,7 +115,21 @@
               "type": "string",
               "enum": [
                 "kaldi",
-                "google"
+                "google",
+                "ibm"
+              ]
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Disable result cache",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Y",
+                "N"
               ]
             }
           }
@@ -165,6 +180,7 @@
               "type": "string",
               "enum": [
                 "google",
+                "ibm",
                 "marytts",
                 "picotts"
               ]
@@ -220,6 +236,7 @@
               "type": "string",
               "enum": [
                 "google",
+                "ibm",
                 "marytts",
                 "picotts"
               ]
@@ -287,8 +304,22 @@
               "type": "string",
               "enum": [
                 "google",
+                "ibm",
                 "marytts",
                 "picotts"
+              ]
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Disable result cache",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Y",
+                "N"
               ]
             }
           }

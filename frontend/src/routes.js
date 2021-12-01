@@ -34,12 +34,14 @@ if (tmpPath) {
 
 const ttsEngines = {
   google: new (require('./tts/google'))(),
+  ibm: new (require('./tts/ibm'))(),
   marytts: new (require('./tts/marytts'))(),
   picotts: new (require('./tts/picotts'))()
 }
 const sttEngines = {
   google: new (require('./stt/google'))(),
-  kaldi: new (require('./stt/kaldi'))()
+  kaldi: new (require('./stt/kaldi'))(),
+  ibm: new (require('./stt/ibm'))()
 }
 
 const multerMemoryStorage = multer.memoryStorage()
@@ -117,7 +119,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google]
+ *           enum: [kaldi, google, ibm]
  *     responses:
  *       200:
  *         description: List of supported STT languages
@@ -163,7 +165,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google]
+ *           enum: [kaldi, google, ibm]
  *       - name: cache
  *         description: Disable result cache
  *         in: query
@@ -262,7 +264,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, marytts, picotts]
+ *           enum: [google, ibm, marytts, picotts]
  *     responses:
  *       200:
  *         description: List of supported voices
@@ -303,7 +305,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, marytts, picotts]
+ *           enum: [google, ibm, marytts, picotts]
  *     responses:
  *       200:
  *         description: List of supported TTS languages
@@ -355,7 +357,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, marytts, picotts]
+ *           enum: [google, ibm, marytts, picotts]
  *       - name: cache
  *         description: Disable result cache
  *         in: query

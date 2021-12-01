@@ -2,6 +2,7 @@ const fs = require('fs')
 const _ = require('lodash')
 const sanitize = require('sanitize-filename')
 const speechScorer = require('word-error-rate')
+const { IamAuthenticator } = require('ibm-watson/auth')
 
 const wer = async (text1, text2) => {
   return {
@@ -34,8 +35,35 @@ const googleOptions = (req) => {
   throw new Error('Google Cloud credentials not found')
 }
 
+const ibmSttOptions = (req) => {
+  const apikey = (req.body.ibm && req.body.ibm.apikey) || process.env.BOTIUM_SPEECH_IBM_STT_APIKEY
+  const serviceUrl = (req.body.ibm && req.body.ibm.serviceUrl) || process.env.BOTIUM_SPEECH_IBM_STT_SERVICEURL
+
+  if (apikey && serviceUrl) {
+    return {
+      authenticator: new IamAuthenticator({ apikey: apikey }),
+      serviceUrl: serviceUrl
+    }
+  }
+  throw new Error('IBM Cloud credentials not found')
+}
+const ibmTtsOptions = (req) => {
+  const apikey = (req.body.ibm && req.body.ibm.apikey) || process.env.BOTIUM_SPEECH_IBM_TTS_APIKEY
+  const serviceUrl = (req.body.ibm && req.body.ibm.serviceUrl) || process.env.BOTIUM_SPEECH_IBM_TTS_SERVICEURL
+
+  if (apikey && serviceUrl) {
+    return {
+      authenticator: new IamAuthenticator({ apikey: apikey }),
+      serviceUrl: serviceUrl
+    }
+  }
+  throw new Error('IBM Cloud credentials not found')
+}
+
 module.exports = {
   wer,
   ttsFilename,
-  googleOptions
+  googleOptions,
+  ibmSttOptions,
+  ibmTtsOptions
 }
