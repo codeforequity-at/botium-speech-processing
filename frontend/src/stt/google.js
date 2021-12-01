@@ -28,16 +28,16 @@ const downloadLanguageCodes = async () => {
 let languageCodes = null
 
 class GoogleSTT {
-  async languages () {
+  async languages (req) {
     if (!languageCodes) {
       languageCodes = _.uniq(await downloadLanguageCodes()).sort()
     }
     return languageCodes
   }
 
-  async stt ({ language, buffer }) {
-    const speechClient = new speech.SpeechClient(googleOptions())
-    const storageClient = new storage.Storage(googleOptions())
+  async stt (req, { language, buffer }) {
+    const speechClient = new speech.SpeechClient(googleOptions(req))
+    const storageClient = new storage.Storage(googleOptions(req))
 
     const request = {
       config: {
@@ -54,11 +54,16 @@ class GoogleSTT {
         throw new Error(`Google Speech config in BOTIUM_SPEECH_GOOGLE_CONFIG invalid: ${err.message}`)
       }
     }
+    if (req.body.google && req.body.google.config) {
+      Object.assign(request.config, req.body.google.config)
+    }
 
     const gcsFileName = `${uuidv1()}.wav`
-    if (process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME) {
+    const googleBucketName = (req.body.google && req.body.google.bucketName) || process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME
+
+    if (googleBucketName) {
       try {
-        const bucket = storageClient.bucket(process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME)
+        const bucket = storageClient.bucket(googleBucketName)
         const file = bucket.file(gcsFileName)
 
         const stream = file.createWriteStream({
@@ -75,7 +80,7 @@ class GoogleSTT {
           })
           stream.end(buffer)
         }))
-        request.audio.uri = `gs://${process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME}/${gcsFileName}`
+        request.audio.uri = `gs://${googleBucketName}/${gcsFileName}`
         debug(`Google Cloud uploaded file to storage: ${request.audio.uri}`)
       } catch (err) {
         debug(err)
@@ -100,8 +105,8 @@ class GoogleSTT {
       debug(err)
       throw new Error(`Google Cloud STT failed: ${err.message}`)
     } finally {
-      if (process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME) {
-        const bucket = storageClient.bucket(process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME)
+      if (googleBucketName) {
+        const bucket = storageClient.bucket(googleBucketName)
         const file = bucket.file(gcsFileName)
         try {
           await file.delete()

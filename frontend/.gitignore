@@ -1,6 +1,6 @@
 node_modules
 package-lock.json
 *.local
-resources/.cache_del
+resources/.cache
 resources/.tmp
 resources/google.json

@@ -40,15 +40,15 @@ const voicesList = [
 ]
 
 class PicoTTS {
-  async voices () {
+  async voices (req) {
     return voicesList
   }
 
-  async languages () {
+  async languages (req) {
     return _.uniq(voicesList.map(v => v.language)).sort()
   }
 
-  async tts ({ language, voice, text }) {
+  async tts (req, { language, voice, text }) {
     const picoVoice = voicesList.find(v => {
       if (language && !v.language.startsWith(language)) return false
       if (voice && v.name !== voice) return false

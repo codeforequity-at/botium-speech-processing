@@ -7,7 +7,7 @@ const { ttsFilename } = require('../utils')
 let maryVoices = null
 
 class MaryTTS {
-  async voices () {
+  async voices (req) {
     if (maryVoices) return maryVoices
 
     const requestOptions = {
@@ -35,12 +35,12 @@ class MaryTTS {
     return maryVoices
   }
 
-  async languages () {
+  async languages (req) {
     const voicesList = await this.voices()
     return _.uniq(voicesList.map(v => v.language)).sort()
   }
 
-  async tts ({ language, voice, text }) {
+  async tts (req, { language, voice, text }) {
     const voicesList = await this.voices()
 
     const maryVoice = voicesList.find(v => {

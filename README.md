@@ -125,6 +125,10 @@ See [swagger.json](./frontend/src/swagger.json):
 
     > curl -X POST "http://127.0.0.1/api/stt/en" -H "Content-Type: audio/wav" -T sample.wav
 
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text with Google, including credentials
+
+    > curl -X POST "http://127.0.0.1/api/stt/en?stt=google" -F "google={\"private_key\": \"xxx\", \"client_email\": \"xxx\"}" -F content=@sample.wav
+
 * HTTP GET to **/api/tts/{language}?text=...** for Text-To-Speech
 
     > curl -X GET "http://127.0.0.1/api/tts/en?text=hello%20world" -o tts.wav
@@ -154,6 +158,10 @@ This project is standing on the shoulders of giants.
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
 
 ## Changelog
+
+### 2021-12-01
+
+* Added option to hand over cloud credentials in request body
 
 ### 2021-01-26
 

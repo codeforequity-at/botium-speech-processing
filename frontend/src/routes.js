@@ -2,7 +2,9 @@ const fs = require('fs')
 const path = require('path')
 const mkdirp = require('mkdirp')
 const crypto = require('crypto')
+const _ = require('lodash')
 const express = require('express')
+const multer = require('multer')
 const sanitize = require('sanitize-filename')
 const contentDisposition = require('content-disposition')
 const { runconvert } = require('./convert/convert')
@@ -12,8 +14,8 @@ const debug = require('debug')('botium-speech-processing-routes')
 const cachePathStt = (process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')) || './resources/.cache/stt'
 const cachePathTts = (process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'tts')) || './resources/.cache/tts'
 const tmpPath = process.env.BOTIUM_SPEECH_TMP_DIR || './resources/.tmp'
-const cacheKeyStt = (data, language, ext) => sanitize(`${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`)
-const cacheKeyTts = (data, language, voice, ext) => sanitize(`${crypto.createHash('md5').update(data).digest('hex')}_${language}_${voice || 'default'}${ext}`)
+const cacheKeyStt = (body, data, language, ext) => sanitize(`${body ? crypto.createHash('md5').update(JSON.stringify(body)).digest('hex') + '_' : ''}${crypto.createHash('md5').update(data).digest('hex')}_${language}${ext}`)
+const cacheKeyTts = (body, data, language, voice, ext) => sanitize(`${body ? crypto.createHash('md5').update(JSON.stringify(body)).digest('hex') + '_' : ''}${crypto.createHash('md5').update(data).digest('hex')}_${language}_${voice || 'default'}${ext}`)
 
 if (process.env.BOTIUM_SPEECH_CACHE_DIR === undefined) {
   console.log(`ATTENTION: cache dir is not set, using ${cachePathStt} and ${cachePathTts} instead`)
@@ -39,6 +41,31 @@ const sttEngines = {
   google: new (require('./stt/google'))(),
   kaldi: new (require('./stt/kaldi'))()
 }
+
+const multerMemoryStorage = multer.memoryStorage()
+const extractMultipartContent = (req, res) => new Promise((resolve, reject) => {
+  multer({ storage: multerMemoryStorage }).single('content')(req, res, (err) => {
+    if (req.body) {
+      for (const key of Object.keys(req.body)) {
+        if (_.isString(req.body[key])) {
+          try {
+            req.body[key] = JSON.parse(req.body[key])
+          } catch (err) {
+          }
+        }
+      }
+    }
+    if (err instanceof multer.MulterError) {
+      resolve(null)
+    } else if (err) {
+      reject(err)
+    } else if (req.file && req.file.buffer) {
+      resolve(req.file.buffer)
+    } else {
+      resolve(null)
+    }
+  })
+})
 
 const router = express.Router()
 
@@ -70,9 +97,9 @@ const router = express.Router()
  *               type: string
  *               enum: [OK, UNAVAILABLE]
  */
-router.get('/api/status', (req, res) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/status', (req, res) => {
   res.json({ status: 'OK' })
-})
+}))
 
 /**
  * @swagger
@@ -99,14 +126,14 @@ router.get('/api/status', (req, res) => {
  *           items:
  *             type: string
  */
-router.get('/api/sttlanguages', async (req, res, next) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttlanguages', async (req, res, next) => {
   try {
     const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
-    res.json(await stt.languages())
+    res.json(await stt.languages(req))
   } catch (err) {
     return next(err)
   }
-})
+}))
 
 /**
  * @swagger
@@ -137,6 +164,13 @@ router.get('/api/sttlanguages', async (req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [kaldi, google]
+ *       - name: cache
+ *         description: Disable result cache
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [Y, N]
  *     requestBody:
  *       description: Audio file
  *       content:
@@ -153,33 +187,50 @@ router.get('/api/sttlanguages', async (req, res, next) => {
  *               type: string
  */
 router.post('/api/stt/:language', async (req, res, next) => {
+  let buffer = null
   if (Buffer.isBuffer(req.body)) {
+    buffer = req.body
+  } else {
+    buffer = await extractMultipartContent(req, res)
+  }
+
+  if (buffer) {
+    const skipCache = req.query && req.query.cache === 'N'
+
     let cacheFile = null
     if (cachePathStt) {
-      cacheFile = path.join(cachePathStt, cacheKeyStt(req.body, req.params.language, '.json'))
+      cacheFile = path.join(cachePathStt, cacheKeyStt(Buffer.isBuffer(req.body) ? null : req.body, buffer, req.params.language, '.json'))
       if (fs.existsSync(cacheFile)) {
-        try {
-          const result = JSON.parse(fs.readFileSync(cacheFile).toString())
-          debug(`Reading stt result ${cacheFile} from cache: ${result.text}`)
-          return res.json(result).end()
-        } catch (err) {
-          debug(`Failed reading stt result ${cacheFile} from cache: ${err.message}`)
+        if (skipCache) {
+          try {
+            fs.unlinkSync(cacheFile)
+          } catch (err) {
+            debug(`Failed deleting stt result ${cacheFile} from cache: ${err.message}`)
+          }
+        } else {
+          try {
+            const result = JSON.parse(fs.readFileSync(cacheFile).toString())
+            debug(`Reading stt result ${cacheFile} from cache: ${result.text}`)
+            return res.json(result).end()
+          } catch (err) {
+            debug(`Failed reading stt result ${cacheFile} from cache: ${err.message}`)
+          }
         }
       }
     }
     try {
       const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
 
-      const result = await stt.stt({
+      const result = await stt.stt(req, {
         language: req.params.language,
-        buffer: req.body
+        buffer: buffer
       })
       if (req.query.hint) {
         result.wer = await wer(req.query.hint, result.text)
       }
       res.json(result).end()
 
-      if (cachePathStt) {
+      if (!skipCache && cachePathStt) {
         try {
           fs.writeFileSync(cacheFile, JSON.stringify(result))
           debug(`Writing stt result ${cacheFile} to cache: ${result.text}`)
@@ -227,14 +278,14 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *               gender:
  *                 type: [male, female, neutral]
  */
-router.get('/api/ttsvoices', async (req, res, next) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttsvoices', async (req, res, next) => {
   try {
     const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
-    res.json(await tts.voices())
+    res.json(await tts.voices(req))
   } catch (err) {
     return next(err)
   }
-})
+}))
 
 /**
  * @swagger
@@ -261,14 +312,14 @@ router.get('/api/ttsvoices', async (req, res, next) => {
  *           items:
  *             type: string
  */
-router.get('/api/ttslanguages', async (req, res, next) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttslanguages', async (req, res, next) => {
   try {
     const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
-    res.json(await tts.languages())
+    res.json(await tts.languages(req))
   } catch (err) {
     return next(err)
   }
-})
+}))
 
 /**
  * @swagger
@@ -305,6 +356,13 @@ router.get('/api/ttslanguages', async (req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [google, marytts, picotts]
+ *       - name: cache
+ *         description: Disable result cache
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [Y, N]
  *     responses:
  *       200:
  *         description: Audio file
@@ -314,32 +372,47 @@ router.get('/api/ttslanguages', async (req, res, next) => {
  *               type: string
  *               format: binary
  */
-router.get('/api/tts/:language', async (req, res, next) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/tts/:language', async (req, res, next) => {
   if (req.query.text) {
+    const skipCache = req.query && req.query.cache === 'N'
+
     let cacheFileName = null
     let cacheFileBuffer = null
     if (cachePathTts) {
-      cacheFileName = path.join(cachePathTts, cacheKeyTts(req.query.text, req.params.language, req.query.voice, '.txt'))
-      cacheFileBuffer = path.join(cachePathTts, cacheKeyTts(req.query.text, req.params.language, req.query.voice, '.bin'))
+      cacheFileName = path.join(cachePathTts, cacheKeyTts(req.body, req.query.text, req.params.language, req.query.voice, '.txt'))
+      cacheFileBuffer = path.join(cachePathTts, cacheKeyTts(req.body, req.query.text, req.params.language, req.query.voice, '.bin'))
       if (fs.existsSync(cacheFileName) && fs.existsSync(cacheFileBuffer)) {
-        try {
-          const name = fs.readFileSync(cacheFileName).toString()
-          const buffer = fs.readFileSync(cacheFileBuffer)
-          debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
-          res.writeHead(200, {
-            'Content-disposition': `${contentDisposition(name)}`,
-            'Content-Length': buffer.length
-          })
-          return res.end(buffer)
-        } catch (err) {
-          debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
+        if (skipCache) {
+          try {
+            fs.unlinkSync(cacheFileName)
+          } catch (err) {
+            debug(`Failed deleting tts result ${cacheFileName} from cache: ${err.message}`)
+          }
+          try {
+            fs.unlinkSync(cacheFileBuffer)
+          } catch (err) {
+            debug(`Failed deleting tts result ${cacheFileBuffer} from cache: ${err.message}`)
+          }
+        } else {
+          try {
+            const name = fs.readFileSync(cacheFileName).toString()
+            const buffer = fs.readFileSync(cacheFileBuffer)
+            debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
+            res.writeHead(200, {
+              'Content-disposition': `${contentDisposition(name)}`,
+              'Content-Length': buffer.length
+            })
+            return res.end(buffer)
+          } catch (err) {
+            debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
+          }
         }
       }
     }
     try {
       const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
 
-      const { buffer, name } = await tts.tts({
+      const { buffer, name } = await tts.tts(req, {
         language: req.params.language,
         voice: req.query.voice,
         text: req.query.text
@@ -350,7 +423,7 @@ router.get('/api/tts/:language', async (req, res, next) => {
       })
       res.end(buffer)
 
-      if (cachePathTts) {
+      if (!skipCache && cachePathTts) {
         try {
           fs.writeFileSync(cacheFileName, name)
           fs.writeFileSync(cacheFileBuffer, buffer)
@@ -365,7 +438,7 @@ router.get('/api/tts/:language', async (req, res, next) => {
   } else {
     next(new Error('req.query.text empty'))
   }
-})
+}))
 
 /**
  * @swagger
@@ -389,13 +462,13 @@ router.get('/api/tts/:language', async (req, res, next) => {
  *               description:
  *                 type: string
  */
-router.get('/api/convertprofiles', async (req, res, next) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/convertprofiles', async (req, res, next) => {
   const keys = Object.keys(process.env).filter(e => e.startsWith('BOTIUM_SPEECH_CONVERT_PROFILE_') && e.endsWith('_CMD')).map(e => e.split('_')[4])
   return res.json(keys.map(key => ({
     name: key,
     description: process.env[`BOTIUM_SPEECH_CONVERT_PROFILE_${key}_DESC`] || ''
   })))
-})
+}))
 
 /**
  * @swagger
@@ -442,7 +515,14 @@ router.get('/api/convertprofiles', async (req, res, next) => {
  *               format: binary
  */
 router.post('/api/convert/:profile', async (req, res, next) => {
-  if (!Buffer.isBuffer(req.body)) {
+  let buffer = null
+  if (Buffer.isBuffer(req.body)) {
+    buffer = req.body
+  } else {
+    buffer = await extractMultipartContent(req, res)
+  }
+
+  if (!buffer) {
     return next(new Error('req.body is not a buffer'))
   }
   const envVarCmd = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_CMD`
@@ -452,7 +532,7 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
 
   try {
-    const { outputName, outputBuffer } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: req.body, start: req.query.start, end: req.query.end })
+    const { outputName, outputBuffer } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: buffer, start: req.query.start, end: req.query.end })
     res.writeHead(200, {
       'Content-disposition': `attachment; filename="${outputName}"`,
       'Content-Length': outputBuffer.length
@@ -495,8 +575,8 @@ router.post('/api/convert/:profile', async (req, res, next) => {
  *             wer:
  *               type: number
  */
-router.get('/api/wer', async (req, res) => {
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/wer', async (req, res) => {
   res.json(await wer(req.query.text1, req.query.text2))
-})
+}))
 
 module.exports = router
