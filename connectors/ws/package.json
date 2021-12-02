@@ -1,0 +1,11 @@
+{
+  "name": "ws-sample",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "ws": "^8.3.0"
+  }
+}

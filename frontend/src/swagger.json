@@ -484,6 +484,56 @@
           }
         }
       }
+    },
+    "/api/sttstream/{language}": {
+      "post": {
+        "description": "Open a Websocket stream vor converting audio stream to text",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "language",
+            "description": "Language code (as returned from sttlanguages endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stt",
+            "description": "Speech-to-text backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kaldi",
+                "google",
+                "ibm"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket Url to stream the audio to",
+            "schema": {
+              "properties": {
+                "wsUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

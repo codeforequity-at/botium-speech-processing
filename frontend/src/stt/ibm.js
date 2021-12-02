@@ -1,6 +1,8 @@
 const _ = require('lodash')
 const SpeechToTextV1 = require('ibm-watson/speech-to-text/v1')
 const debug = require('debug')('botium-speech-processing-ibm-stt')
+const { PassThrough } = require('stream')
+const EventEmitter = require('events')
 
 const { ibmSttOptions } = require('../utils')
 
@@ -10,6 +12,64 @@ class IbmSTT {
 
     const speechModels = await speechToText.listModels()
     return _.uniq(speechModels.result.models.map(m => m.language)).sort()
+  }
+
+  async stt_OpenStream (req, { language }) {
+    const speechToText = new SpeechToTextV1(ibmSttOptions(req))
+
+    const recognizeParams = {
+      objectMode: true,
+      contentType: 'audio/wav',
+      model: language,
+      interimResults: true
+    }
+    if (recognizeParams.model.length === 5) {
+      recognizeParams.model = `${recognizeParams.model}_BroadbandModel`
+    }
+    let recognizeStream = null
+    try {
+      recognizeStream = speechToText.recognizeUsingWebSocket(recognizeParams)
+    } catch (err) {
+      debug(err)
+      throw new Error(`IBM STT streaming failed: ${err.message}`)
+    }
+
+    const bufferStream = new PassThrough()
+    bufferStream.pipe(recognizeStream)
+    const events = new EventEmitter()
+
+    recognizeStream.on('data', (data) => {
+      const transcription = data.results[0] && data.results[0].alternatives[0] ? data.results[0].alternatives[0].transcript : null
+      if (transcription) {
+        events.emit('data', {
+          transcription,
+          final: data.results[0].final,
+          debug: data
+        })
+      }
+    })
+    recognizeStream.on('error', (err) => {
+      events.emit('data', {
+        err: `${err.message}`
+      })
+    })
+    recognizeStream.on('close', () => {
+      events.emit('close')
+    })
+
+    return {
+      events,
+      write: (buffer) => {
+        bufferStream.push(buffer)
+      },
+      close: () => {
+        if (recognizeStream) {
+          recognizeStream.end()
+          recognizeStream.destroy()
+        }
+        recognizeStream = null
+      }
+    }
   }
 
   async stt (req, { language, buffer }) {

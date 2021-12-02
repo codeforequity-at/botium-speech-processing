@@ -21,8 +21,8 @@ const cleanEnv = (envName) => {
 }
 
 const googleOptions = (req) => {
-  const privateKey = (req.body.google && req.body.google.private_key) || cleanEnv('BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY')
-  const clientEmail = (req.body.google && req.body.google.client_email) || process.env.BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL
+  const privateKey = (req && req.body && req.body.google && req.body.google.private_key) || cleanEnv('BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY')
+  const clientEmail = (req && req.body && req.body.google && req.body.google.client_email) || process.env.BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL
 
   if (privateKey && clientEmail) {
     return { credentials: { private_key: privateKey, client_email: clientEmail } }
@@ -36,8 +36,8 @@ const googleOptions = (req) => {
 }
 
 const ibmSttOptions = (req) => {
-  const apikey = (req.body.ibm && req.body.ibm.apikey) || process.env.BOTIUM_SPEECH_IBM_STT_APIKEY
-  const serviceUrl = (req.body.ibm && req.body.ibm.serviceUrl) || process.env.BOTIUM_SPEECH_IBM_STT_SERVICEURL
+  const apikey = (req && req.body && req.body.ibm && req.body.ibm.apikey) || process.env.BOTIUM_SPEECH_IBM_STT_APIKEY
+  const serviceUrl = (req && req.body && req.body.ibm && req.body.ibm.serviceUrl) || process.env.BOTIUM_SPEECH_IBM_STT_SERVICEURL
 
   if (apikey && serviceUrl) {
     return {
@@ -48,8 +48,8 @@ const ibmSttOptions = (req) => {
   throw new Error('IBM Cloud credentials not found')
 }
 const ibmTtsOptions = (req) => {
-  const apikey = (req.body.ibm && req.body.ibm.apikey) || process.env.BOTIUM_SPEECH_IBM_TTS_APIKEY
-  const serviceUrl = (req.body.ibm && req.body.ibm.serviceUrl) || process.env.BOTIUM_SPEECH_IBM_TTS_SERVICEURL
+  const apikey = (req && req.body && req.body.ibm && req.body.ibm.apikey) || process.env.BOTIUM_SPEECH_IBM_TTS_APIKEY
+  const serviceUrl = (req && req.body && req.body.ibm && req.body.ibm.serviceUrl) || process.env.BOTIUM_SPEECH_IBM_TTS_SERVICEURL
 
   if (apikey && serviceUrl) {
     return {

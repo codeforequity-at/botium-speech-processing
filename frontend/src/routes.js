@@ -2,11 +2,13 @@ const fs = require('fs')
 const path = require('path')
 const mkdirp = require('mkdirp')
 const crypto = require('crypto')
+const { v1: uuidv1 } = require('uuid')
 const _ = require('lodash')
 const express = require('express')
 const multer = require('multer')
 const sanitize = require('sanitize-filename')
 const contentDisposition = require('content-disposition')
+const { WebSocketServer } = require('ws')
 const { runconvert } = require('./convert/convert')
 const { wer } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
@@ -581,4 +583,88 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   res.json(await wer(req.query.text1, req.query.text2))
 }))
 
-module.exports = router
+const wssStreams = {}
+
+/**
+ * @swagger
+ * /api/sttstream/{language}:
+ *   post:
+ *     description: Open a Websocket stream vor converting audio stream to text
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: language
+ *         description: Language code (as returned from sttlanguages endpoint)
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: stt
+ *         description: Speech-to-text backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [kaldi, google, ibm]
+ *     responses:
+ *       200:
+ *         description: Websocket Url to stream the audio to
+ *         schema:
+ *           properties:
+ *             wsUri:
+ *               type: string
+ */
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttstream/:language', async (req, res, next) => {
+  try {
+    const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
+
+    const streamId = uuidv1()
+    const stream = await stt.stt_OpenStream(req, { language: req.params.language })
+    stream.events.on('close', () => delete wssStreams[streamId])
+    wssStreams[streamId] = stream
+
+    const wsProtocol = (req.protocol === 'https' ? 'wss:' : 'ws:')
+    res.json({
+      wsUri: `${wsProtocol}//${req.get('host')}/${streamId}`
+    }).end()
+  } catch (err) {
+    return next(err)
+  }
+}))
+
+const wssUpgrade = (req, socket, head) => {
+  const streamId = req.url.substring(req.url.lastIndexOf('/') + 1)
+  const stream = wssStreams[streamId]
+  if (!stream) throw new Error('not allowed')
+
+  const wss1 = new WebSocketServer({ noServer: true })
+  wss1.on('connection', async (ws) => {
+    stream.events.on('data', (data) => {
+      ws.send(JSON.stringify(data))
+    })
+    stream.events.on('close', () => {
+      ws.close()
+      wss1.close()
+    })
+    ws.on('message', (data) => {
+      if (Buffer.isBuffer(data)) {
+        stream.write(data)
+      }
+    })
+    ws.on('close', () => {
+      delete wssStreams[streamId]
+      stream.close()
+      wss1.close()
+    })
+  })
+  wss1.handleUpgrade(req, socket, head, (ws) => {
+    wss1.emit('connection', ws, req)
+  })
+}
+
+module.exports = {
+  router,
+  wssUpgrade
+}

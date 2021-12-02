@@ -4,6 +4,9 @@ const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-c
 const storage = require('@google-cloud/storage')
 const request = require('request-promise-native')
 const cheerio = require('cheerio')
+const { PassThrough } = require('stream')
+const EventEmitter = require('events')
+
 const debug = require('debug')('botium-speech-processing-google-stt')
 
 const { googleOptions } = require('../utils')
@@ -33,6 +36,64 @@ class GoogleSTT {
       languageCodes = _.uniq(await downloadLanguageCodes()).sort()
     }
     return languageCodes
+  }
+
+  async stt_OpenStream (req, { language }) {
+    const speechClient = new speech.SpeechClient(googleOptions(req))
+
+    const request = {
+      config: {
+        encoding: 'LINEAR16',
+        sampleRateHertz: 16000,
+        languageCode: language
+      },
+      interimResults: true
+    }
+
+    let recognizeStream = null
+    try {
+      recognizeStream = speechClient.streamingRecognize(request)
+    } catch (err) {
+      debug(err)
+      throw new Error(`Google Cloud STT streaming failed: ${err.message}`)
+    }
+
+    const bufferStream = new PassThrough()
+    bufferStream.pipe(recognizeStream)
+    const events = new EventEmitter()
+
+    recognizeStream.on('data', (data) => {
+      const transcription = data.results[0] && data.results[0].alternatives[0] ? data.results[0].alternatives[0].transcript : null
+      if (transcription) {
+        events.emit('data', {
+          transcription,
+          final: data.results[0].isFinal,
+          debug: data
+        })
+      }
+    })
+    recognizeStream.on('error', (err) => {
+      events.emit('data', {
+        err: `${err.message}`
+      })
+    })
+    recognizeStream.on('close', () => {
+      events.emit('close')
+    })
+
+    return {
+      events,
+      write: (buffer) => {
+        bufferStream.push(buffer)
+      },
+      close: () => {
+        if (recognizeStream) {
+          recognizeStream.end()
+          recognizeStream.destroy()
+        }
+        recognizeStream = null
+      }
+    }
   }
 
   async stt (req, { language, buffer }) {

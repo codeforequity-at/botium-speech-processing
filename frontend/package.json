@@ -36,7 +36,8 @@
     "swagger-ui-express": "^4.2.0",
     "uuid": "^8.3.2",
     "winston": "^3.3.3",
-    "word-error-rate": "^0.0.7"
+    "word-error-rate": "^0.0.7",
+    "ws": "^8.3.0"
   },
   "devDependencies": {
     "eslint": "^8.3.0",

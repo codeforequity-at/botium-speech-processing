@@ -1,9 +1,12 @@
+const { createServer } = require('http')
 const express = require('express')
 const bodyParser = require('body-parser')
 const expressWinston = require('express-winston')
 const winston = require('winston')
 const swaggerUi = require('swagger-ui-express')
 const debug = require('debug')('botium-speech-processing-server')
+
+const { router, wssUpgrade } = require('./routes')
 
 const app = express()
 const port = process.env.PORT || 56000
@@ -53,7 +56,7 @@ app.get('/', (req, res) => {
 })
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(require('./swagger.json')))
 
-app.use('/', require('./routes'))
+app.use('/', router)
 app.use((err, req, res, next) => {
   debug(`request failed: ${err}`)
 
@@ -66,7 +69,20 @@ app.use((err, req, res, next) => {
     })
 })
 
-app.listen(port, function () {
+const server = createServer(app)
+server.on('upgrade', (req, socket, head) => {
+  try {
+    wssUpgrade(req, socket, head)
+  } catch (err) {
+    socket.write('HTTP/1.1 401 Web Socket Protocol Handshake\r\n' +
+      'Upgrade: WebSocket\r\n' +
+      'Connection: Upgrade\r\n' +
+      '\r\n')
+    socket.destroy()
+  }
+})
+
+server.listen(port, function () {
   console.log(`Botium Speech Processing Frontend service running on port ${port}`)
   console.log('Swagger UI available at /')
   console.log('Swagger definition available at /swagger.json')
