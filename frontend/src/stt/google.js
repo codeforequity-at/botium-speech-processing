@@ -49,6 +49,9 @@ class GoogleSTT {
       },
       interimResults: false
     }
+    if (req.body.google && req.body.google.config) {
+      Object.assign(request.config, req.body.google.config)
+    }
 
     let recognizeStream = null
     try {
