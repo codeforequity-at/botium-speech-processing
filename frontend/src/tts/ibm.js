@@ -34,6 +34,9 @@ class IbmTTS {
       accept: 'audio/wav',
       voice: voice
     }
+    if (req.body.ibm && req.body.ibm.config) {
+      Object.assign(synthesizeParams, req.body.ibm.config)
+    }
 
     try {
       const synthResult = await textToSpeech.synthesize(synthesizeParams)

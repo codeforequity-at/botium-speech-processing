@@ -51,6 +51,9 @@ class GoogleTTS {
       voice: voiceSelector,
       audioConfig: { audioEncoding: 'LINEAR16', sampleRateHertz: 16000 }
     }
+    if (req.body.google && req.body.google.config) {
+      Object.assign(request, req.body.google.config)
+    }
 
     try {
       const [response] = await client.synthesizeSpeech(request)
