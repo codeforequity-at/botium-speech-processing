@@ -610,10 +610,12 @@ const wssStreams = {}
  *           enum: [kaldi, google, ibm]
  *     responses:
  *       200:
- *         description: Websocket Url to stream the audio to
+ *         description: Websocket Url to stream the audio to, and the uri to end the stream
  *         schema:
  *           properties:
  *             wsUri:
+ *               type: string
+ *             endUri:
  *               type: string
  */
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttstream/:language', async (req, res, next) => {
@@ -625,13 +627,46 @@ const wssStreams = {}
     stream.events.on('close', () => delete wssStreams[streamId])
     wssStreams[streamId] = stream
 
-    const wsProtocol = (req.protocol === 'https' ? 'wss:' : 'ws:')
+    const wsProtocol = (req.protocol === 'https' ? 'wss' : 'ws')
     res.json({
-      wsUri: `${wsProtocol}//${req.get('host')}/${streamId}`
+      wsUri: `${wsProtocol}://${req.get('host')}/${streamId}`,
+      endUri: `${req.protocol}://${req.get('host')}/api/sttend/${streamId}`
     }).end()
   } catch (err) {
     return next(err)
   }
+}))
+
+/**
+ * @swagger
+ * /api/sttend/{streamId}:
+ *   get:
+ *     description: Close a Websocket stream for converting audio stream to text
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: streamId
+ *         description: Stream Id (as returned from sttstream endpoint)
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Websocket stream closed
+ */
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttend/:streamId', async (req, res, next) => {
+  const stream = wssStreams[req.params.streamId]
+  if (stream) {
+    try {
+      stream.end()
+    } catch (err) {
+      return next(err)
+    }
+  }
+  res.end()
 }))
 
 const wssUpgrade = (req, socket, head) => {

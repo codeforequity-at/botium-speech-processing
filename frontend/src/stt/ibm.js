@@ -21,7 +21,7 @@ class IbmSTT {
       objectMode: true,
       contentType: 'audio/wav',
       model: language,
-      interimResults: true
+      interimResults: false
     }
     if (recognizeParams.model.length === 5) {
       recognizeParams.model = `${recognizeParams.model}_BroadbandModel`
@@ -39,13 +39,15 @@ class IbmSTT {
     const events = new EventEmitter()
 
     recognizeStream.on('data', (data) => {
-      const transcription = data.results[0] && data.results[0].alternatives[0] ? data.results[0].alternatives[0].transcript : null
-      if (transcription) {
-        events.emit('data', {
-          transcription,
-          final: data.results[0].final,
-          debug: data
-        })
+      for (const result of data.results || []) {
+        const transcription = result.alternatives[0] ? result.alternatives[0].transcript : null
+        if (transcription) {
+          events.emit('data', {
+            text: transcription,
+            final: !!result.final,
+            debug: result
+          })
+        }
       }
     })
     recognizeStream.on('error', (err) => {
@@ -61,6 +63,11 @@ class IbmSTT {
       events,
       write: (buffer) => {
         bufferStream.push(buffer)
+      },
+      end: () => {
+        if (recognizeStream) {
+          recognizeStream.end()
+        }
       },
       close: () => {
         if (recognizeStream) {

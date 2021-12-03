@@ -4,6 +4,20 @@ const sanitize = require('sanitize-filename')
 const speechScorer = require('word-error-rate')
 const { IamAuthenticator } = require('ibm-watson/auth')
 
+const asJson = (str) => {
+  if (str && _.isString(str)) {
+    try {
+      return JSON.parse(str)
+    } catch (err) {
+      return null
+    }
+  } else if (_.isObject(str)) {
+    return str
+  } else {
+    return null
+  }
+}
+
 const wer = async (text1, text2) => {
   return {
     distance: speechScorer.calculateEditDistance(text1 || '', text2 || ''),
@@ -61,6 +75,7 @@ const ibmTtsOptions = (req) => {
 }
 
 module.exports = {
+  asJson,
   wer,
   ttsFilename,
   googleOptions,

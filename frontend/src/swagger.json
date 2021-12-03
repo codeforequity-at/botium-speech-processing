@@ -523,14 +523,46 @@
         ],
         "responses": {
           "200": {
-            "description": "Websocket Url to stream the audio to",
+            "description": "Websocket Url to stream the audio to, and the uri to end the stream",
             "schema": {
               "properties": {
                 "wsUri": {
                   "type": "string"
+                },
+                "endUri": {
+                  "type": "string"
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/sttend/{streamId}": {
+      "get": {
+        "description": "Close a Websocket stream for converting audio stream to text",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "streamId",
+            "description": "Stream Id (as returned from sttstream endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket stream closed"
           }
         }
       }

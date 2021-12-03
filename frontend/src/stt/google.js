@@ -47,7 +47,7 @@ class GoogleSTT {
         sampleRateHertz: 16000,
         languageCode: language
       },
-      interimResults: true
+      interimResults: false
     }
 
     let recognizeStream = null
@@ -66,8 +66,8 @@ class GoogleSTT {
       const transcription = data.results[0] && data.results[0].alternatives[0] ? data.results[0].alternatives[0].transcript : null
       if (transcription) {
         events.emit('data', {
-          transcription,
-          final: data.results[0].isFinal,
+          text: transcription,
+          final: !!data.results[0].isFinal,
           debug: data
         })
       }
@@ -86,9 +86,13 @@ class GoogleSTT {
       write: (buffer) => {
         bufferStream.push(buffer)
       },
-      close: () => {
+      end: () => {
         if (recognizeStream) {
           recognizeStream.end()
+        }
+      },
+      close: () => {
+        if (recognizeStream) {
           recognizeStream.destroy()
         }
         recognizeStream = null
