@@ -49,6 +49,14 @@ class GoogleSTT {
       },
       interimResults: false
     }
+    if (process.env.BOTIUM_SPEECH_GOOGLE_CONFIG) {
+      try {
+        const defaultConfig = JSON.parse(process.env.BOTIUM_SPEECH_GOOGLE_CONFIG)
+        Object.assign(request.config, defaultConfig)
+      } catch (err) {
+        throw new Error(`Google Speech config in BOTIUM_SPEECH_GOOGLE_CONFIG invalid: ${err.message}`)
+      }
+    }
     if (req.body.google && req.body.google.config) {
       Object.assign(request.config, req.body.google.config)
     }
