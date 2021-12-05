@@ -8,7 +8,7 @@ const debug = require('debug')('botium-speech-processing-kaldi')
 
 const getKaldiUrl = (language) => {
   const envVarUrl = `BOTIUM_SPEECH_KALDI_URL_${language.toUpperCase()}`
-  if (!process.env[envVarUrl]) throw new Error(`Environment variable ${envVarUrl} empty`)
+  if (!process.env[envVarUrl]) throw new Error(`Language ${language.toUpperCase()} for Kaldi not available`)
   return Mustache.render(process.env[envVarUrl], { language })
 }
 
