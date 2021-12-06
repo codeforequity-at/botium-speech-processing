@@ -714,11 +714,14 @@ const wssStreams = {}
     stream.events.on('close', () => delete wssStreams[streamId])
     wssStreams[streamId] = stream
 
+    const proxyHost = req.headers['x-forwarded-host']
+    const host = proxyHost || req.get('host')
+
     const wsProtocol = (req.protocol === 'https' ? 'wss' : 'ws')
     res.json({
-      wsUri: `${wsProtocol}://${req.get('host')}/${streamId}`,
-      statusUri: `${req.protocol}://${req.get('host')}/api/sttstatus/${streamId}`,
-      endUri: `${req.protocol}://${req.get('host')}/api/sttend/${streamId}`
+      wsUri: `${wsProtocol}://${host}/${streamId}`,
+      statusUri: `${req.protocol}://${host}/api/sttstatus/${streamId}`,
+      endUri: `${req.protocol}://${host}/api/sttend/${streamId}`
     }).end()
   } catch (err) {
     return next(err)
