@@ -26,7 +26,7 @@ class IbmSTT {
     if (recognizeParams.model.length === 5) {
       recognizeParams.model = `${recognizeParams.model}_BroadbandModel`
     }
-    if (req.body.ibm && req.body.ibm.config) {
+    if (req.body && req.body.ibm && req.body.ibm.config) {
       Object.assign(recognizeParams, req.body.ibm.config)
     }
 

@@ -22,11 +22,22 @@ class KaldiSTT {
     return new Promise((resolve) => {
       const kaldiUrl = getKaldiUrl(language)
 
+      const qs = {
+        'content-type': 'audio/x-wav',
+        '+layout': '(string)interleaved',
+        '+rate': '(int)16000',
+        '+format': '(string)S16LE',
+        '+channels': '(int)1'
+      }
+      if (req.body && req.body.kaldi && req.body.kaldi.config) {
+        Object.assign(qs, req.body.kaldi.config)
+      }
+
       const wsUri = (kaldiUrl.indexOf('?') > 0 ? kaldiUrl.substr(0, kaldiUrl.indexOf('?')) : kaldiUrl)
         .replace('http://', 'ws://')
         .replace('https://', 'wss://')
         .replace('dynamic/recognize', 'ws/speech') +
-        '?content-type=audio/x-raw,+layout=(string)interleaved,+rate=(int)16000,+format=(string)S16LE,+channels=(int)1'
+        '?' + Object.keys(qs).map(p => `${p}=${qs[p]}`).join(',')
       debug('wsUri', wsUri)
 
       const ws = new WebSocket(wsUri)

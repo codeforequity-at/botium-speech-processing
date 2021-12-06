@@ -615,6 +615,8 @@ const wssStreams = {}
  *           properties:
  *             wsUri:
  *               type: string
+ *             statusUri:
+ *               type: string
  *             endUri:
  *               type: string
  */
@@ -630,10 +632,42 @@ const wssStreams = {}
     const wsProtocol = (req.protocol === 'https' ? 'wss' : 'ws')
     res.json({
       wsUri: `${wsProtocol}://${req.get('host')}/${streamId}`,
+      statusUri: `${req.protocol}://${req.get('host')}/api/sttstatus/${streamId}`,
       endUri: `${req.protocol}://${req.get('host')}/api/sttend/${streamId}`
     }).end()
   } catch (err) {
     return next(err)
+  }
+}))
+
+/**
+ * @swagger
+ * /api/sttstatus/{streamId}:
+ *   get:
+ *     description: Check a Websocket stream for converting audio stream to text
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: streamId
+ *         description: Stream Id (as returned from sttstream endpoint)
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Websocket stream ok
+ *       404:
+ *         description: Websocket stream not available
+ */
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttstatus/:streamId', async (req, res, next) => {
+  const stream = wssStreams[req.params.streamId]
+  if (stream) {
+    res.status(200).json({ status: 'OK', streamId: req.params.streamId })
+  } else {
+    res.status(404).json({ status: 'NOTFOUND', streamId: req.params.streamId })
   }
 }))
 
@@ -700,6 +734,7 @@ const wssUpgrade = (req, socket, head) => {
 }
 
 module.exports = {
+  skipSecurityCheck: (req) => (req.url.startsWith('/api/sttstatus/') || req.url.startsWith('/api/sttend/')),
   router,
   wssUpgrade
 }

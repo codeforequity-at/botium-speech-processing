@@ -1,12 +1,13 @@
 const { createServer } = require('http')
 const express = require('express')
+const cors = require('cors')
 const bodyParser = require('body-parser')
 const expressWinston = require('express-winston')
 const winston = require('winston')
 const swaggerUi = require('swagger-ui-express')
 const debug = require('debug')('botium-speech-processing-server')
 
-const { router, wssUpgrade } = require('./routes')
+const { skipSecurityCheck, router, wssUpgrade } = require('./routes')
 
 const app = express()
 const port = process.env.PORT || 56000
@@ -18,6 +19,7 @@ if (apiTokens.length === 0) {
   console.log('Add BOTIUM_API_TOKEN header to all HTTP requests, or BOTIUM_API_TOKEN URL parameter')
 }
 
+app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.text())
 app.use(bodyParser.raw({ type: 'audio/*', limit: process.env.BOTIUM_SPEECH_UPLOAD_LIMIT }))
@@ -36,6 +38,8 @@ if (debug.enabled) {
 }
 
 app.use('/api/*', (req, res, next) => {
+  if (skipSecurityCheck(req)) return next()
+
   const clientApiToken = req.headers.BOTIUM_API_TOKEN || req.headers.botium_api_token || req.query.BOTIUM_API_TOKEN || req.query.botium_api_token || req.body.BOTIUM_API_TOKEN || req.body.botium_api_token
 
   if (apiTokens.length === 0 || apiTokens.indexOf(clientApiToken) >= 0) {
@@ -62,7 +66,7 @@ app.use((err, req, res, next) => {
 
   if (err.message) res.statusMessage = err.message
 
-  res.status(err.code || 500)
+  res.status(500)
     .json({
       status: 'error',
       message: err.message ? err.message : err

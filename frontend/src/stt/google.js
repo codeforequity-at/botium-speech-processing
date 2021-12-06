@@ -1,6 +1,6 @@
 const _ = require('lodash')
 const { v1: uuidv1 } = require('uuid')
-const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech')
+const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech').v1p1beta1
 const storage = require('@google-cloud/storage')
 const request = require('request-promise-native')
 const cheerio = require('cheerio')
@@ -57,7 +57,7 @@ class GoogleSTT {
         throw new Error(`Google Speech config in BOTIUM_SPEECH_GOOGLE_CONFIG invalid: ${err.message}`)
       }
     }
-    if (req.body.google && req.body.google.config) {
+    if (req.body && req.body.google && req.body.google.config) {
       Object.assign(request.config, req.body.google.config)
     }
 
