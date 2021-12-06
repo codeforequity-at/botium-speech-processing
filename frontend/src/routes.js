@@ -549,6 +549,91 @@ router.post('/api/convert/:profile', async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/convert:
+ *   post:
+ *     description: Convert audio file in multiple steps
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - audio/*
+ *     parameters:
+ *       - name: profile
+ *         description: Conversion profile (for example WAVTOMONOWAV, MP3TOMONOWAV)
+ *         in: query
+ *         required: true
+ *         style: form
+ *         explode: true
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *       - name: start
+ *         description: Start Timecode within audio stream (01:32)
+ *         in: query
+ *         schema:
+ *           type: string
+ *           pattern: '^([0-5][0-9]):([0-5][0-9])$'
+ *       - name: end
+ *         description: End Timecode within audio stream (02:48)
+ *         in: query
+ *         schema:
+ *           type: string
+ *           pattern: '^([0-5][0-9]):([0-5][0-9])$'
+ *     requestBody:
+ *       description: Audio file
+ *       content:
+ *         audio/wav:
+ *           schema:
+ *             type: string
+ *             format: binary
+ *     responses:
+ *       200:
+ *         description: Audio file
+ *         content:
+ *           audio/*:
+ *             schema:
+ *               type: string
+ *               format: binary
+ */
+router.post('/api/convert', async (req, res, next) => {
+  let buffer = null
+  if (Buffer.isBuffer(req.body)) {
+    buffer = req.body
+  } else {
+    buffer = await extractMultipartContent(req, res)
+  }
+
+  if (!buffer) {
+    return next(new Error('req.body is not a buffer'))
+  }
+
+  const profiles = _.isString(req.query.profile) ? [req.query.profile] : _.isArray(req.query.profile) ? req.query.profile : []
+  let transformBuffer = buffer
+  let transformName = null
+  for (const profile of profiles) {
+    const envVarCmd = `BOTIUM_SPEECH_CONVERT_PROFILE_${profile.toUpperCase()}_CMD`
+    if (!process.env[envVarCmd]) {
+      return next(new Error(`Environment variable ${envVarCmd} empty`))
+    }
+    const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${profile.toUpperCase()}_OUTPUT`
+
+    try {
+      const { outputName, outputBuffer } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: transformBuffer, start: req.query.start, end: req.query.end })
+      transformBuffer = outputBuffer
+      transformName = outputName
+    } catch (err) {
+      return next(err)
+    }
+  }
+  res.writeHead(200, {
+    'Content-disposition': `attachment; filename="${transformName}"`,
+    'Content-Length': transformBuffer.length
+  })
+  res.end(transformBuffer)
+})
+
+/**
+ * @swagger
  * /api/wer:
  *   get:
  *     description: Calculate Levenshtein edit distance between two strings (word error rate)
