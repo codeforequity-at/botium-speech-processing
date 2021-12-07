@@ -2,7 +2,7 @@
     "openapi": "3.0.0",
     "info": {
       "title": "Botium Speech Processing API",
-      "version": "1.0.5",
+      "version": "1.1.0",
       "description": "Botium Speech Processing API"
     },
     "basePath": "/"
