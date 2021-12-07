@@ -10,7 +10,7 @@ const sanitize = require('sanitize-filename')
 const contentDisposition = require('content-disposition')
 const { WebSocketServer } = require('ws')
 const { runconvert } = require('./convert/convert')
-const { wer } = require('./utils')
+const { wer, readBaseUrls } = require('./utils')
 const debug = require('debug')('botium-speech-processing-routes')
 
 const cachePathStt = (process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')) || './resources/.cache/stt'
@@ -714,14 +714,11 @@ const wssStreams = {}
     stream.events.on('close', () => delete wssStreams[streamId])
     wssStreams[streamId] = stream
 
-    const proxyHost = req.headers['x-forwarded-host']
-    const host = proxyHost || req.get('host')
-
-    const wsProtocol = (req.protocol === 'https' ? 'wss' : 'ws')
+    const baseUrls = readBaseUrls(req)
     res.json({
-      wsUri: `${wsProtocol}://${host}/${streamId}`,
-      statusUri: `${req.protocol}://${host}/api/sttstatus/${streamId}`,
-      endUri: `${req.protocol}://${host}/api/sttend/${streamId}`
+      wsUri: `${baseUrls.wsUri}/${streamId}`,
+      statusUri: `${baseUrls.baseUri}/api/sttstatus/${streamId}`,
+      endUri: `${baseUrls.baseUri}/api/sttend/${streamId}`
     }).end()
   } catch (err) {
     return next(err)

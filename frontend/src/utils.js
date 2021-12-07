@@ -74,11 +74,22 @@ const ibmTtsOptions = (req) => {
   throw new Error('IBM Cloud credentials not found')
 }
 
+const readBaseUrls = (req) => {
+  const proto = process.env.BOTIUM_SPEECH_URL ? process.env.BOTIUM_SPEECH_URL.split('://')[0] : req.protocol
+  const host = process.env.BOTIUM_SPEECH_URL ? process.env.BOTIUM_SPEECH_URL.split('://')[1] : req.headers['x-forwarded-host'] ? req.headers['x-forwarded-host'] : req.get('host')
+
+  return {
+    wsUri: `${proto === 'https' ? 'wss' : 'ws'}://${host}`,
+    baseUri: `${proto}://${host}`
+  }
+}
+
 module.exports = {
   asJson,
   wer,
   ttsFilename,
   googleOptions,
   ibmSttOptions,
-  ibmTtsOptions
+  ibmTtsOptions,
+  readBaseUrls
 }
