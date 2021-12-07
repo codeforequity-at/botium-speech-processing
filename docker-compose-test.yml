@@ -21,7 +21,7 @@ services:
 #      BOTIUM_SPEECH_PROVIDER_STT: kaldi
 #    volumes:
 #      - "./frontend/resources:/app/resources"
-  stt_en:
+  stt-en:
     build:
       context: stt
       dockerfile: Dockerfile.kaldi.en

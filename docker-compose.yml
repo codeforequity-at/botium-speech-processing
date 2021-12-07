@@ -18,22 +18,22 @@ services:
       BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
     volumes:
       - "./frontend/resources:/app/resources"
-#  watcher:
-#    image: botium/botium-speech-watcher:${TAG}
-#    restart: always
-#    volumes:
-#      - "./watcher:/app/watch"
-#      - "./logs/watcher:/app/logs"
-#  stt-en:
-#    image: botium/botium-speech-kaldi-en:${TAG}
-#    restart: always
-#    volumes:
-#      - "./logs/stt-en:/opt/logs"
-#  stt-de:
-#    image: botium/botium-speech-kaldi-de:${TAG}
-#    restart: always
-#    volumes:
-#      - "./logs/stt-de:/opt/logs"
+  watcher:
+    image: botium/botium-speech-watcher:${TAG}
+    restart: always
+    volumes:
+      - "./watcher:/app/watch"
+      - "./logs/watcher:/app/logs"
+  stt-en:
+    image: botium/botium-speech-kaldi-en:${TAG}
+    restart: always
+    volumes:
+      - "./logs/stt-en:/opt/logs"
+  stt-de:
+    image: botium/botium-speech-kaldi-de:${TAG}
+    restart: always
+    volumes:
+      - "./logs/stt-de:/opt/logs"
   tts:
     image: botium/botium-speech-marytts:${TAG}
     restart: always
