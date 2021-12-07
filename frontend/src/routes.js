@@ -695,7 +695,7 @@ const wssStreams = {}
  *           enum: [kaldi, google, ibm]
  *     responses:
  *       200:
- *         description: Websocket Url to stream the audio to, and the uri to end the stream
+ *         description: Websocket Url to stream the audio to, and the uri to check status and end the stream
  *         schema:
  *           properties:
  *             wsUri:

@@ -74,6 +74,15 @@ Configuration changes with [environment variables](./frontend/resources/.env). S
 
 **Recommendation:** Do not change the _.env_ file but create a _.env.local_ file to overwrite the default settings. This will prevent troubles on future _git pull_
 
+### Request-Specific Configuration
+
+If there is a JSON-formatted request body, or a multipart request body, certain sections are considered:
+
+* **credentials** to override the server default credentials for cloud services
+* **config** to override the server default settings for the cloud API calls
+
+*See samples below*
+
 ### Securing the API
 
 The environment variable _BOTIUM_API_TOKENS_ contains a list of valid API Tokens accepted by the server (separated by whitespace or comma). The HTTP Header _BOTIUM_API_TOKEN_ is validated on each call to the API.
@@ -96,14 +105,12 @@ _Attention: in Google Chrome this only works with services published as HTTPS, y
 Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
 
 ### Real Time API
-_Available for Kaldi only_
 
-There are Websocket endpoints exposed for real-time audio decoding. Find the API description in the [Kaldi GStreamer Server documentation](https://github.com/alumae/kaldi-gstreamer-server#websocket-based-client-server-protocol).
+It is possible to stream audio from real-time audio decoding: Call the **/api/sttstream/{language}** endpoint to open a websocket stream, it will return three urls:
 
-The Websocket endpoints are:
-
-* English: ws://127.0.0.1/stt-en/client/ws/speech
-* German: ws://127.0.0.1/stt-de/client/ws/speech
+* wsUri - the Websocket uri to stream your audio to. By default, it accepts wav-formatted audio-chunks
+* statusUri - check if the stream is still open
+* endUri - end audio streaming and close websocket
 
 ## File System Watcher
 
@@ -127,7 +134,15 @@ See [swagger.json](./frontend/src/swagger.json):
 
 * HTTP POST to **/api/stt/{language}** for Speech-To-Text with Google, including credentials
 
-    > curl -X POST "http://127.0.0.1/api/stt/en?stt=google" -F "google={\"private_key\": \"xxx\", \"client_email\": \"xxx\"}" -F content=@sample.wav
+    > curl -X POST "http://127.0.0.1/api/stt/en-US?stt=google" -F "google={\"credentials\": {\"private_key\": \"xxx\", \"client_email\": \"xxx\"}}" -F content=@sample.wav
+
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text with Google, including switch to MP3 encoding
+
+    > curl -X POST "http://127.0.0.1/api/stt/en-US?stt=google" -F "google={\"config\": {\"encoding\": \"MP3\"}}" -F content=@sample.mp3
+
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text with IBM, including credentials
+
+    > curl -X POST "http://127.0.0.1/api/stt/en-US?stt=ibm" -F "google={\"credentials\": {\"apikey\": \"xxx\", \"serviceUrl\": \"xxx\"}}" -F content=@sample.wav
 
 * HTTP GET to **/api/tts/{language}?text=...** for Text-To-Speech
 
@@ -158,6 +173,10 @@ This project is standing on the shoulders of giants.
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
 
 ## Changelog
+
+### 2021-12-07
+
+* Added endpoints for streaming audio and responses
 
 ### 2021-12-01
 
