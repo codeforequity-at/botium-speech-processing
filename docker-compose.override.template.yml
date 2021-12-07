@@ -3,5 +3,9 @@ services:
   dictate:
     image: botium/botium-speech-dictate:develop
     environment:
+      BOTIUM_SPEECH_URL: https://speech.botiumbox.com
+  dictate:
+    image: botium/botium-speech-dictate:develop
+    environment:
       STT_URL_DE: wss://speech.botiumbox.com/stt-de
       STT_URL_EN: wss://speech.botiumbox.com/stt-en
