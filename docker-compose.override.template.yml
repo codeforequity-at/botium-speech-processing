@@ -1,7 +1,6 @@
 version: '3'
 services:
-  dictate:
-    image: botium/botium-speech-dictate:develop
+  frontend:
     environment:
       BOTIUM_SPEECH_URL: https://speech.botiumbox.com
   dictate:
