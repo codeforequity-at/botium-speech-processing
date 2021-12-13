@@ -51,3 +51,7 @@ docker_latest_release:
 
 	docker tag botium/botium-speech-dictate:$(VERSION) botium/botium-speech-dictate:latest
 	docker push botium/botium-speech-dictate:latest
+
+develop: docker_build_develop docker_publish_develop
+
+release: docker_build_release docker_publish_release docker_latest_release
