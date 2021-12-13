@@ -21,7 +21,7 @@ class IbmSTT {
       objectMode: true,
       contentType: 'audio/wav',
       model: language,
-      interimResults: false
+      interimResults: true
     }
     if (recognizeParams.model.length === 5) {
       recognizeParams.model = `${recognizeParams.model}_BroadbandModel`

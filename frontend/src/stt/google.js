@@ -47,7 +47,7 @@ class GoogleSTT {
         sampleRateHertz: 16000,
         languageCode: language
       },
-      interimResults: false
+      interimResults: true
     }
     if (process.env.BOTIUM_SPEECH_GOOGLE_CONFIG) {
       try {
