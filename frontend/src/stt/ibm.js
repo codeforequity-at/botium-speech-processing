@@ -21,7 +21,8 @@ class IbmSTT {
       objectMode: true,
       contentType: 'audio/wav',
       model: language,
-      interimResults: true
+      interimResults: true,
+      timestamps: true
     }
     if (recognizeParams.model.length === 5) {
       recognizeParams.model = `${recognizeParams.model}_BroadbandModel`
@@ -46,11 +47,16 @@ class IbmSTT {
       for (const result of data.results || []) {
         const transcription = result.alternatives[0] ? result.alternatives[0].transcript : null
         if (transcription) {
-          events.emit('data', {
+          const event = {
             text: transcription,
             final: !!result.final,
             debug: result
-          })
+          }
+          if (result.alternatives[0].timestamps && result.alternatives[0].timestamps.length > 0) {
+            event.start = _.round(result.alternatives[0].timestamps[0][1], 3)
+            event.end = _.round(result.alternatives[result.alternatives.length - 1].timestamps[0][2], 3)
+          }
+          events.emit('data', event)
         }
       }
     })

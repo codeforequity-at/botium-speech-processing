@@ -19,7 +19,7 @@ class KaldiSTT {
   }
 
   stt_OpenStream (req, { language }) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const kaldiUrl = getKaldiUrl(language)
 
       const qs = {
@@ -47,12 +47,19 @@ class KaldiSTT {
         ws.on('message', (data) => {
           try {
             const dj = JSON.parse(data)
-            if (dj.result && dj.result.hypotheses && dj.result.hypotheses.length > 0) {
-              events.emit('data', {
-                text: dj.result.hypotheses[0].transcript,
+            console.log(dj)
+            const hypotheses = dj.result && dj.result.hypotheses && dj.result.hypotheses[0]
+            if (hypotheses && hypotheses.transcript) {
+              const event = {
+                text: hypotheses.transcript,
                 final: !!dj.result.final,
                 debug: dj
-              })
+              }
+              if (dj['total-length']) {
+                event.start = _.round(_.toNumber(dj['total-length']) - _.toNumber(dj['segment-length']), 3)
+                event.end = _.round(_.toNumber(dj['total-length']), 3)
+              }
+              events.emit('data', event)
             }
           } catch (err) {
             debug(`received non JSON content on stream, ignoring. ${err.message}`)
@@ -86,6 +93,7 @@ class KaldiSTT {
           }
         })
       })
+      ws.on('error', (err) => reject(new Error(`Failed to open Kaldi stream to ${wsUri}: ${err.message}`)))
     })
   }
 

@@ -43,6 +43,7 @@ class GoogleSTT {
 
     const request = {
       config: {
+        enableWordTimeOffsets: true,
         encoding: 'LINEAR16',
         sampleRateHertz: 16000,
         languageCode: language
@@ -74,13 +75,18 @@ class GoogleSTT {
     const events = new EventEmitter()
 
     recognizeStream.on('data', (data) => {
-      const transcription = data.results[0] && data.results[0].alternatives[0] ? data.results[0].alternatives[0].transcript : null
-      if (transcription) {
-        events.emit('data', {
-          text: transcription,
+      const alternative = data.results[0] && data.results[0].alternatives[0]
+      if (alternative && alternative.transcript) {
+        const event = {
+          text: alternative.transcript,
           final: !!data.results[0].isFinal,
           debug: data
-        })
+        }
+        if (alternative.words && alternative.words.length > 0) {
+          event.start = _.round(_.toNumber(alternative.words[0].startTime.seconds) + _.toNumber(alternative.words[0].startTime.nanos) / 1000000000, 3)
+          event.end = _.round(_.toNumber(alternative.words[alternative.words.length - 1].endTime.seconds) + _.toNumber(alternative.words[alternative.words.length - 1].endTime.nanos) / 1000000000, 3)
+        }
+        events.emit('data', event)
       }
     })
     recognizeStream.on('error', (err) => {
