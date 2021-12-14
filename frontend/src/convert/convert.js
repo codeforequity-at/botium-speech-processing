@@ -22,7 +22,7 @@ const _isMP3 = (buf) => {
     buf[1] === 68 &&
     buf[2] === 51) || (
     buf[0] === 255 &&
-      (buf[1] === 251 || buf[1] === 250)
+      (buf[1] === 251 || buf[1] === 250 || buf[1] === 243 || buf[1] === 242)
   )
 }
 
@@ -51,6 +51,14 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
       } catch (err) {
         debug(`identification of input file type ${input} failed: ${err.message}`)
         throw new Error('identification of input file type failed')
+      }
+    }
+    if (inputtype) {
+      try {
+        fs.renameSync(input, `${input}.${inputtype}`)
+        input = `${input}.${inputtype}`
+      } catch (err) {
+        debug(`renaming of input file ${input} with extension ${inputtype} failed: ${err.message}`)
       }
     }
     if (!outputName) {
