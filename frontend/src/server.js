@@ -64,7 +64,7 @@ app.use('/', router)
 app.use((err, req, res, next) => {
   debug(`request failed: ${err}`)
 
-  if (err.message) res.statusMessage = err.message
+  if (err.message) res.statusMessage = err.message.split('\n')[0]
 
   res.status(500)
     .json({

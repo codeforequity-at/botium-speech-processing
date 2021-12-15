@@ -80,6 +80,15 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
   return new Promise((resolve, reject) => {
     const childProcess = spawn('/bin/sh', ['-c', cmdLineFull])
 
+    const childProcessErr = []
+    const formatChildProcessErr = (header) => {
+      const lines = [
+        header,
+        ...childProcessErr
+      ].filter(l => l).map(l => l.trim()).filter(l => l)
+      return lines.join('\n')
+    }
+
     childProcess.once('exit', (code, signal) => {
       debug(`conversion process exited with code ${code}, signal ${signal}`)
       if (code === 0) {
@@ -94,7 +103,7 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
           reject(new Error(`conversion process output file ${output} not readable: ${err.message}`))
         }
       } else {
-        reject(new Error(`conversion process exited with code ${code}, signal ${signal}`))
+        reject(new Error(formatChildProcessErr(`conversion process exited with failure code ${code}${signal ? `, signal ${signal}` : ''}`)))
       }
       if (input) {
         try {
@@ -106,19 +115,23 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
     })
     childProcess.once('error', (err) => {
       debug(`conversion process failed: ${err.message}`)
-      reject(new Error(`conversion process failed: ${err.message}`))
+      reject(new Error(formatChildProcessErr(`conversion process failed: ${err.message}`)))
     })
     childProcess.stdout.on('error', (err) => {
       debug('stdout err ' + err)
+      childProcessErr.push(`${err.message}`)
     })
     childProcess.stderr.on('error', (err) => {
       debug('stderr err ' + err)
+      childProcessErr.push(`${err.message}`)
     })
     childProcess.stdin.on('error', (err) => {
       debug('stdin err ' + err)
+      childProcessErr.push(`${err.message}`)
     })
     childProcess.stderr.on('data', (data) => {
       debug('stderr ' + data)
+      childProcessErr.push(`${data}`)
     })
 
     if (cmdLine.indexOf('{{{input}}}') < 0) {
