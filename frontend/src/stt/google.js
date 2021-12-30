@@ -117,7 +117,7 @@ class GoogleSTT {
     }
   }
 
-  async stt (req, { language, buffer }) {
+  async stt (req, { language, buffer, hint }) {
     const speechClient = new speech.SpeechClient(googleOptions(req))
     const storageClient = new storage.Storage(googleOptions(req))
 
@@ -126,6 +126,11 @@ class GoogleSTT {
         languageCode: language
       },
       audio: {
+      }
+    }
+    if (hint && hint.length > 0) {
+      request.config.speechContexts = {
+        phrases: [hint]
       }
     }
     if (process.env.BOTIUM_SPEECH_GOOGLE_CONFIG) {

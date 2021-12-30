@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Botium Speech Processing API",
-    "version": "1.1.1",
+    "version": "1.2.1",
     "description": "Botium Speech Processing API"
   },
   "basePath": "/",
@@ -58,7 +58,8 @@
               "enum": [
                 "kaldi",
                 "google",
-                "ibm"
+                "ibm",
+                "azure"
               ]
             }
           }
@@ -99,7 +100,16 @@
           },
           {
             "name": "hint",
-            "description": "Hint text for calculating the Levenshtein edit distance for the result text (word error rate)",
+            "description": "Hint text for the Speech-to-text backend (supported by google and azure)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "wer",
+            "description": "Text for calculating the Levenshtein edit distance for the result text (word error rate)",
             "in": "query",
             "required": false,
             "schema": {
@@ -116,13 +126,14 @@
               "enum": [
                 "kaldi",
                 "google",
-                "ibm"
+                "ibm",
+                "azure"
               ]
             }
           },
           {
             "name": "cache",
-            "description": "Disable result cache",
+            "description": "Use result cache (default Y)",
             "in": "query",
             "required": false,
             "schema": {
@@ -181,6 +192,7 @@
               "enum": [
                 "google",
                 "ibm",
+                "azure",
                 "marytts",
                 "picotts"
               ]
@@ -237,6 +249,7 @@
               "enum": [
                 "google",
                 "ibm",
+                "azure",
                 "marytts",
                 "picotts"
               ]
@@ -305,6 +318,7 @@
               "enum": [
                 "google",
                 "ibm",
+                "azure",
                 "marytts",
                 "picotts"
               ]
@@ -312,7 +326,7 @@
           },
           {
             "name": "cache",
-            "description": "Disable result cache",
+            "description": "Use result cache (default Y)",
             "in": "query",
             "required": false,
             "schema": {
@@ -587,7 +601,8 @@
               "enum": [
                 "kaldi",
                 "google",
-                "ibm"
+                "ibm",
+                "azure"
               ]
             }
           }

@@ -63,7 +63,7 @@ class GoogleTTS {
       }
     } catch (err) {
       debug(err)
-      throw new Error(`Google Cloud STT failed: ${err.message}`)
+      throw new Error(`Google Cloud TTS failed: ${err.message}`)
     }
   }
 }

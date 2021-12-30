@@ -47,7 +47,6 @@ class KaldiSTT {
         ws.on('message', (data) => {
           try {
             const dj = JSON.parse(data)
-            console.log(dj)
             const hypotheses = dj.result && dj.result.hypotheses && dj.result.hypotheses[0]
             if (hypotheses && hypotheses.transcript) {
               const event = {

@@ -26,6 +26,7 @@
     "express-winston": "^4.2.0",
     "ibm-watson": "^6.2.1",
     "lodash": "^4.17.21",
+    "microsoft-cognitiveservices-speech-sdk": "^1.19.0",
     "mkdirp": "^1.0.4",
     "multer": "^1.4.3",
     "mustache": "^4.2.0",

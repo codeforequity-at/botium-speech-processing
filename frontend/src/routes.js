@@ -37,13 +37,15 @@ if (tmpPath) {
 const ttsEngines = {
   google: new (require('./tts/google'))(),
   ibm: new (require('./tts/ibm'))(),
+  azure: new (require('./tts/azure'))(),
   marytts: new (require('./tts/marytts'))(),
   picotts: new (require('./tts/picotts'))()
 }
 const sttEngines = {
   google: new (require('./stt/google'))(),
   kaldi: new (require('./stt/kaldi'))(),
-  ibm: new (require('./stt/ibm'))()
+  ibm: new (require('./stt/ibm'))(),
+  azure: new (require('./stt/azure'))()
 }
 
 const multerMemoryStorage = multer.memoryStorage()
@@ -121,7 +123,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm]
+ *           enum: [kaldi, google, ibm, azure]
  *     responses:
  *       200:
  *         description: List of supported STT languages
@@ -156,7 +158,13 @@ const router = express.Router()
  *         schema:
  *           type: string
  *       - name: hint
- *         description: Hint text for calculating the Levenshtein edit distance for the result text (word error rate)
+ *         description: Hint text for the Speech-to-text backend (supported by google and azure)
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: wer
+ *         description: Text for calculating the Levenshtein edit distance for the result text (word error rate)
  *         in: query
  *         required: false
  *         schema:
@@ -167,9 +175,9 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm]
+ *           enum: [kaldi, google, ibm, azure]
  *       - name: cache
- *         description: Disable result cache
+ *         description: Use result cache (default Y)
  *         in: query
  *         required: false
  *         schema:
@@ -227,10 +235,11 @@ router.post('/api/stt/:language', async (req, res, next) => {
 
       const result = await stt.stt(req, {
         language: req.params.language,
-        buffer: buffer
+        buffer: buffer,
+        hint: req.query.hint
       })
-      if (req.query.hint) {
-        result.wer = await wer(req.query.hint, result.text)
+      if (req.query.wer) {
+        result.wer = await wer(req.query.wer, result.text)
       }
       res.json(result).end()
 
@@ -266,7 +275,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, marytts, picotts]
+ *           enum: [google, ibm, azure, marytts, picotts]
  *     responses:
  *       200:
  *         description: List of supported voices
@@ -307,7 +316,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, marytts, picotts]
+ *           enum: [google, ibm, azure, marytts, picotts]
  *     responses:
  *       200:
  *         description: List of supported TTS languages
@@ -359,9 +368,9 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, marytts, picotts]
+ *           enum: [google, ibm, azure, marytts, picotts]
  *       - name: cache
- *         description: Disable result cache
+ *         description: Use result cache (default Y)
  *         in: query
  *         required: false
  *         schema:
@@ -692,7 +701,7 @@ const wssStreams = {}
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm]
+ *           enum: [kaldi, google, ibm, azure]
  *     responses:
  *       200:
  *         description: Websocket Url to stream the audio to, and the uri to check status and end the stream

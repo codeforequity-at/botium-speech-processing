@@ -19,7 +19,7 @@ const main = async () => {
   ws.on('message', (data) => {
     try {
       const dj = JSON.parse(data)
-      if (dj.final) console.log('received: %s', dj.text)
+      if (dj.final) console.log('received %s-%s: %s ', dj.start, dj.end, dj.text)
     } catch (err) {
     }
   })
