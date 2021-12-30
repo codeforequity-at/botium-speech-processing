@@ -23,10 +23,14 @@ const enumValueToName = (obj, value) => {
   return Object.keys(obj)[Object.values(obj).findIndex(x => x === value)]
 }
 
+const _cleanString = (str) => str.toLowerCase().replace(/[\W_]+/g, ' ').split(' ').filter(s => s && s.length > 0).join(' ')
+
 const wer = async (text1, text2) => {
+  const from = _cleanString(text1 || '')
+  const to = _cleanString(text2 || '')
   return {
-    distance: speechScorer.calculateEditDistance(text1 || '', text2 || ''),
-    wer: speechScorer.wordErrorRate(text1 || '', text2 || '')
+    distance: speechScorer.calculateEditDistance(from, to),
+    wer: speechScorer.wordErrorRate(from, to)
   }
 }
 
