@@ -174,6 +174,10 @@ This project is standing on the shoulders of giants.
 
 ## Changelog
 
+### 2022-01-12
+
+* Added support for Azure Speech Services
+
 ### 2021-12-07
 
 * Added endpoints for streaming audio and responses
