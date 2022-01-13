@@ -222,6 +222,9 @@ router.post('/api/stt/:language', async (req, res, next) => {
         } else {
           try {
             const result = JSON.parse(fs.readFileSync(cacheFile).toString())
+            if (req.query.wer) {
+              result.wer = await wer(req.query.wer, result.text)
+            }
             debug(`Reading stt result ${cacheFile} from cache: ${result.text}`)
             return res.json(result).end()
           } catch (err) {
