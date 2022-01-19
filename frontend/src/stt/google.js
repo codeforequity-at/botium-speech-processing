@@ -130,7 +130,7 @@ class GoogleSTT {
     }
     if (hint && hint.length > 0) {
       request.config.speechContexts = [
-        { phrases: hint }
+        { phrases: [hint] }
       ]
     }
     if (process.env.BOTIUM_SPEECH_GOOGLE_CONFIG) {
@@ -176,7 +176,6 @@ class GoogleSTT {
     } else {
       request.audio.content = buffer.toString('base64')
     }
-
     try {
       const [operation, initialApiResponse] = await speechClient.longRunningRecognize(request)
       debug(`Google Cloud initialApiResponse: ${JSON.stringify(initialApiResponse, null, 2)}`)
