@@ -129,9 +129,9 @@ class GoogleSTT {
       }
     }
     if (hint && hint.length > 0) {
-      request.config.speechContexts = {
-        phrases: [hint]
-      }
+      request.config.speechContexts = [
+        { phrases: hint }
+      ]
     }
     if (process.env.BOTIUM_SPEECH_GOOGLE_CONFIG) {
       try {
