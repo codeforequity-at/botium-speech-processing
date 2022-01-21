@@ -46,7 +46,8 @@ const sttEngines = {
   google: new (require('./stt/google'))(),
   kaldi: new (require('./stt/kaldi'))(),
   ibm: new (require('./stt/ibm'))(),
-  azure: new (require('./stt/azure'))()
+  azure: new (require('./stt/azure'))(),
+  awstranscribe: new (require('./stt/awstranscribe'))()
 }
 
 const multerMemoryStorage = multer.memoryStorage()
@@ -124,7 +125,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm, azure]
+ *           enum: [kaldi, google, ibm, azure, awstranscribe]
  *     responses:
  *       200:
  *         description: List of supported STT languages
@@ -176,7 +177,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm, azure]
+ *           enum: [kaldi, google, ibm, azure, awstranscribe]
  *       - name: cache
  *         description: Use result cache (default Y)
  *         in: query
@@ -705,7 +706,7 @@ const wssStreams = {}
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm, azure]
+ *           enum: [kaldi, google, ibm, azure, awstranscribe]
  *     responses:
  *       200:
  *         description: Websocket Url to stream the audio to, and the uri to check status and end the stream

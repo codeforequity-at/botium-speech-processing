@@ -14,6 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-polly": "^3.47.1",
+    "@aws-sdk/client-transcribe-streaming": "^3.47.1",
     "@google-cloud/speech": "^4.10.0",
     "@google-cloud/storage": "^5.18.0",
     "@google-cloud/text-to-speech": "^3.4.0",

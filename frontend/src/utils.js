@@ -100,6 +100,23 @@ const pollyOptions = (req) => {
   throw new Error('AWS Polly credentials not found')
 }
 
+const awstranscribeOptions = (req) => {
+  const region = _.get(req, 'body.awstranscribe.credentials.region') || process.env.BOTIUM_SPEECH_AWS_REGION
+  const accessKeyId = _.get(req, 'body.awstranscribe.credentials.accessKeyId') || process.env.BOTIUM_SPEECH_AWS_ACCESS_KEY_ID
+  const secretAccessKey = _.get(req, 'body.awstranscribe.credentials.secretAccessKey') || process.env.BOTIUM_SPEECH_AWS_SECRET_ACCESS_KEY
+
+  if (region && accessKeyId && secretAccessKey) {
+    return {
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey
+      }
+    }
+  }
+  throw new Error('AWS Transcribe credentials not found')
+}
+
 const azureSpeechConfig = (req) => {
   const subscriptionKey = _.get(req, 'body.azure.credentials.subscriptionKey') || process.env.BOTIUM_SPEECH_AZURE_SUBSCRIPTION_KEY
   const region = _.get(req, 'body.azure.credentials.region') || process.env.BOTIUM_SPEECH_AZURE_REGION
@@ -158,6 +175,7 @@ module.exports = {
   ibmSttOptions,
   ibmTtsOptions,
   pollyOptions,
+  awstranscribeOptions,
   azureSpeechConfig,
   applyExtraAzureSpeechConfig,
   getAzureErrorDetails,

@@ -59,7 +59,8 @@
                 "kaldi",
                 "google",
                 "ibm",
-                "azure"
+                "azure",
+                "awstranscribe"
               ]
             }
           }
@@ -127,7 +128,8 @@
                 "kaldi",
                 "google",
                 "ibm",
-                "azure"
+                "azure",
+                "awstranscribe"
               ]
             }
           },
@@ -605,7 +607,8 @@
                 "kaldi",
                 "google",
                 "ibm",
-                "azure"
+                "azure",
+                "awstranscribe"
               ]
             }
           }
