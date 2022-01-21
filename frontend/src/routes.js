@@ -38,6 +38,7 @@ const ttsEngines = {
   google: new (require('./tts/google'))(),
   ibm: new (require('./tts/ibm'))(),
   azure: new (require('./tts/azure'))(),
+  polly: new (require('./tts/polly'))(),
   marytts: new (require('./tts/marytts'))(),
   picotts: new (require('./tts/picotts'))()
 }
@@ -278,7 +279,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, marytts, picotts]
+ *           enum: [google, ibm, azure, polly, marytts, picotts]
  *     responses:
  *       200:
  *         description: List of supported voices
@@ -319,7 +320,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, marytts, picotts]
+ *           enum: [google, ibm, azure, polly, marytts, picotts]
  *     responses:
  *       200:
  *         description: List of supported TTS languages
@@ -371,7 +372,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, marytts, picotts]
+ *           enum: [google, ibm, azure, polly, marytts, picotts]
  *       - name: cache
  *         description: Use result cache (default Y)
  *         in: query

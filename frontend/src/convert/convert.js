@@ -26,13 +26,18 @@ const _isMP3 = (buf) => {
   )
 }
 
-const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
+const pcmtowav = async (inputBuffer, { sampleRate = 16000, bitDepth = 16, channelCount = 1 }) => {
+  const result = await runconvert(`sox -r ${sampleRate} -e signed -b ${bitDepth} -c ${channelCount} {{{input}}} {{{output}}}`, 'output.wav', { inputBuffer, inputType: 'raw' })
+  return result.outputBuffer
+}
+
+const runconvert = async (cmdLine, outputName, { inputBuffer, inputType, start, end }) => {
   const jobId = uuidv1()
 
   const writeInput = !outputName || cmdLine.indexOf('{{{input}}}') >= 0 || cmdLine.indexOf('{{{inputtype}}}') >= 0
 
   let input = null
-  let inputtype = null
+  let inputtype = inputType || null
 
   if (writeInput) {
     input = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${jobId}_input`
@@ -42,15 +47,17 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
       debug(`conversion process input file ${input} not writable: ${err.message}`)
       throw new Error('conversion process input file not writable')
     }
-    if (_isMP3(inputBuffer)) {
-      inputtype = 'mp3'
-    } else {
-      try {
-        inputtype = await _getSoxFileType(input)
-        debug(`Identified input type: ${inputtype}`)
-      } catch (err) {
-        debug(`identification of input file type ${input} failed: ${err.message}`)
-        throw new Error('identification of input file type failed')
+    if (!inputtype) {
+      if (_isMP3(inputBuffer)) {
+        inputtype = 'mp3'
+      } else {
+        try {
+          inputtype = await _getSoxFileType(input)
+          debug(`Identified input type: ${inputtype}`)
+        } catch (err) {
+          debug(`identification of input file type ${input} failed: ${err.message}`)
+          throw new Error('identification of input file type failed')
+        }
       }
     }
     if (inputtype) {
@@ -142,5 +149,6 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, start, end }) => {
 }
 
 module.exports = {
+  pcmtowav,
   runconvert
 }

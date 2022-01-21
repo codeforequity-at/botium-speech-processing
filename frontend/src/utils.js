@@ -83,6 +83,23 @@ const ibmTtsOptions = (req) => {
   throw new Error('IBM Cloud credentials not found')
 }
 
+const pollyOptions = (req) => {
+  const region = _.get(req, 'body.polly.credentials.region') || process.env.BOTIUM_SPEECH_AWS_REGION
+  const accessKeyId = _.get(req, 'body.polly.credentials.accessKeyId') || process.env.BOTIUM_SPEECH_AWS_ACCESS_KEY_ID
+  const secretAccessKey = _.get(req, 'body.polly.credentials.secretAccessKey') || process.env.BOTIUM_SPEECH_AWS_SECRET_ACCESS_KEY
+
+  if (region && accessKeyId && secretAccessKey) {
+    return {
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey
+      }
+    }
+  }
+  throw new Error('AWS Polly credentials not found')
+}
+
 const azureSpeechConfig = (req) => {
   const subscriptionKey = _.get(req, 'body.azure.credentials.subscriptionKey') || process.env.BOTIUM_SPEECH_AZURE_SUBSCRIPTION_KEY
   const region = _.get(req, 'body.azure.credentials.region') || process.env.BOTIUM_SPEECH_AZURE_REGION
@@ -140,6 +157,7 @@ module.exports = {
   googleOptions,
   ibmSttOptions,
   ibmTtsOptions,
+  pollyOptions,
   azureSpeechConfig,
   applyExtraAzureSpeechConfig,
   getAzureErrorDetails,
