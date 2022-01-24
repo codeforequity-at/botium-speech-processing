@@ -166,6 +166,10 @@ const readBaseUrls = (req) => {
   }
 }
 
+const applyIfExists = (target, src, p) => {
+  return Object.assign(target, _.get(src, p) || {})
+}
+
 module.exports = {
   asJson,
   enumValueToName,
@@ -179,5 +183,6 @@ module.exports = {
   azureSpeechConfig,
   applyExtraAzureSpeechConfig,
   getAzureErrorDetails,
-  readBaseUrls
+  readBaseUrls,
+  applyIfExists
 }
