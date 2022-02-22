@@ -12,9 +12,9 @@ services:
     restart: always
     environment:
       BOTIUM_API_TOKENS: 
-      BOTIUM_SPEECH_PROVIDER_TTS: google
-      BOTIUM_SPEECH_PROVIDER_STT: google
-      BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL:
-      BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
+      BOTIUM_SPEECH_PROVIDER_TTS: azure
+      BOTIUM_SPEECH_PROVIDER_STT: azure
+      BOTIUM_SPEECH_AZURE_SUBSCRIPTION_KEY:
+      BOTIUM_SPEECH_AZURE_REGION:
     volumes:
       - "./frontend/resources:/app/resources"

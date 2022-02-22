@@ -26,20 +26,20 @@ Some examples what you can do with this:
 * Build voice-enabled chatbot services (for example, IVR systems)
   * see the [Rasa Custom Voice Channel](./connectors/rasa)
 * Classification of audio file transcriptions
-* [Automated Testing](https://chatbotslife.com/testing-alexa-skills-with-avs-mocha-and-botium-f6c22549f66e) of Voice services with [Botium](https://medium.com/@floriantreml/botium-in-a-nutshell-part-1-overview-f8d0ceaf8fb4)
+* [Automated Testing](https://wiki.botiumbox.com/how-to-guides/voice-app-testing/) of Voice services with [Botium](https://botium.ai)
 
 ## Installation
 
 ### Software and Hardware Requirements
 
-* 8GB of RAM (accessible for Docker) and 40GB free HD space
+* 8GB of RAM (accessible for Docker) and 40GB free HD space (for full installation)
 * Internet connectivity
 * [docker](https://docs.docker.com/)
 * [docker-compose](https://docs.docker.com/compose/)
 
-_Note: memory usage can be reduced if only one language is required - default configuration comes with two languages._
+_Note: memory usage can be reduced if only one language for Kaldi is required - default configuration comes with two languages._
 
-### Use Prebuilt Docker Images
+### Full Installation (Prebuilt Docker Images)
 
 Clone or download this repository and start with docker-compose:
 
@@ -50,6 +50,12 @@ This will download the latest released prebuilt images from Dockerhub. To downlo
     > docker-compose --env-file .env.develop up
 
 Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
+
+### Slim Cloud-Specific Installation (Prebuilt Docker Images)
+
+For the major cloud providers there are additional docker-compose files. If using those, the installation is more slim, as there is only the *frontend*-service required. For instance, add your Azure subscription key and Azure region key to the file *docker-compose-azure.yml* and start the services:
+
+    > docker-compose -f docker-compose-azure.yml up -d
 
 ### Optional: Build Docker Images
 
