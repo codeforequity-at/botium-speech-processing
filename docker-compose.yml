@@ -25,19 +25,19 @@ services:
     user: 1000:1000
     volumes:
       - "./watcher:/app/watch"
-      - "./logs/watcher:/app/logs"
+      - logs:/app/logs
   stt-en:
     image: botium/botium-speech-kaldi-en:${TAG}
     restart: always
     user: 1000:1000
     volumes:
-      - "./logs/stt-en:/opt/logs"
+      - logs:/opt/logs
   stt-de:
     image: botium/botium-speech-kaldi-de:${TAG}
     restart: always
     user: 1000:1000
     volumes:
-      - "./logs/stt-de:/opt/logs"
+      - logs:/opt/logs
   tts:
     image: botium/botium-speech-marytts:${TAG}
     restart: always
@@ -46,3 +46,5 @@ services:
     image: botium/botium-speech-dictate:${TAG}
     restart: always
     user: 1000:1000
+volumes:
+  logs:
