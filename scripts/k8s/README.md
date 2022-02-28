@@ -9,4 +9,4 @@ To use it:
  * deploy it `kubectl apply -R -f default`
  * undeploy it `kubectl delete -R -f default` 
 
-Do not modify and commit directly. Workload files are generated from helm chat!
+Do not modify and commit directly. Workload files are generated from helm chart!

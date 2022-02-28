@@ -6,10 +6,11 @@ RUN apt-get update && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-VOLUME /app/watch
-
 COPY watch_stt.sh /app/watch_stt.sh
 COPY watch_tts.sh /app/watch_tts.sh
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-CMD ["/usr/bin/supervisord"]
+RUN groupadd --gid 1000 watcher && useradd --uid 1000 --gid watcher --shell /bin/bash --create-home watcher
+RUN mkdir /app/logs && chown -R 1000:1000 /app
+USER watcher
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

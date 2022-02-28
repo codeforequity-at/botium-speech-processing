@@ -180,6 +180,10 @@ This project is standing on the shoulders of giants.
 
 ## Changelog
 
+### 2022-02-28
+
+* Applied Security Best Practices (not run as root user)
+
 ### 2022-01-12
 
 * Added support for Azure Speech Services
