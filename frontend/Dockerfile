@@ -10,10 +10,9 @@ COPY . /app
 COPY ./resources/.env /app/.env
 RUN find . -type f ! -path '*/node_modules/*' -print0 | xargs -0 dos2unix
 
-VOLUME /app/resources
-
 EXPOSE 56000
 
 RUN groupadd --gid 1000 node && useradd --uid 1000 --gid node --shell /bin/bash --create-home node
+RUN chown -R 1000:1000 /app
 USER node
 CMD npm run start-dist
