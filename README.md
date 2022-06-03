@@ -180,6 +180,9 @@ This project is standing on the shoulders of giants.
 
 ## Changelog
 
+### 2022-03-06
+* Voice effects to consider audio file length
+
 ### 2022-02-28
 
 * Applied Security Best Practices (not run as root user)
