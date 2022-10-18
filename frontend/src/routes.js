@@ -11,6 +11,7 @@ const contentDisposition = require('content-disposition')
 const { WebSocketServer } = require('ws')
 const { runconvert } = require('./convert/convert')
 const { wer, readBaseUrls } = require('./utils')
+const { getAudioLengthSeconds } = require('./soxi')
 const debug = require('debug')('botium-speech-processing-routes')
 
 const cachePathStt = (process.env.BOTIUM_SPEECH_CACHE_DIR && path.join(process.env.BOTIUM_SPEECH_CACHE_DIR, 'stt')) || './resources/.cache/stt'
@@ -74,6 +75,24 @@ const extractMultipartContent = (req, res) => new Promise((resolve, reject) => {
     }
   })
 })
+
+const _addContentDurationHeadersForFile = async (name, filenameOrBuffer, headers = {}) => {
+  try {
+    const outputDuration = await getAudioLengthSeconds(filenameOrBuffer)
+    return _addContentDurationHeaders(outputDuration, headers)
+  } catch (err) {
+    debug(`no audio length readable for ${name}: ${err.message}`)
+    return headers
+  }
+}
+
+const _addContentDurationHeaders = (outputDuration, headers = {}) => {
+  if (outputDuration >= 0) {
+    headers['Content-Duration'] = outputDuration.toFixed(0)
+    headers['X-Content-Duration'] = outputDuration.toFixed(3)
+  }
+  return headers
+}
 
 const router = express.Router()
 
@@ -416,10 +435,12 @@ router.post('/api/stt/:language', async (req, res, next) => {
             const name = fs.readFileSync(cacheFileName).toString()
             const buffer = fs.readFileSync(cacheFileBuffer)
             debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
-            res.writeHead(200, {
+            const headers = {
               'Content-disposition': `${contentDisposition(name)}`,
               'Content-Length': buffer.length
-            })
+            }
+            await _addContentDurationHeadersForFile(name, cacheFileBuffer, headers)
+            res.writeHead(200, headers)
             return res.end(buffer)
           } catch (err) {
             debug(`Failed reading tts result ${cacheFileName} from cache: ${err.message}`)
@@ -435,10 +456,12 @@ router.post('/api/stt/:language', async (req, res, next) => {
         voice: req.query.voice,
         text: req.query.text
       })
-      res.writeHead(200, {
+      const headers = {
         'Content-disposition': `${contentDisposition(name)}`,
         'Content-Length': buffer.length
-      })
+      }
+      await _addContentDurationHeadersForFile(name, buffer, headers)
+      res.writeHead(200, headers)
       res.end(buffer)
 
       if (!skipCache && cachePathTts) {
@@ -550,11 +573,13 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
 
   try {
-    const { outputName, outputBuffer } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: buffer, start: req.query.start, end: req.query.end })
-    res.writeHead(200, {
+    const { outputName, outputBuffer, outputDuration } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: buffer, start: req.query.start, end: req.query.end })
+    const headers = {
       'Content-disposition': `attachment; filename="${outputName}"`,
       'Content-Length': outputBuffer.length
-    })
+    }
+    _addContentDurationHeaders(outputDuration, headers)
+    res.writeHead(200, headers)
     res.end(outputBuffer)
   } catch (err) {
     return next(err)
@@ -624,6 +649,7 @@ router.post('/api/convert', async (req, res, next) => {
   const profiles = _.isString(req.query.profile) ? [req.query.profile] : _.isArray(req.query.profile) ? req.query.profile : []
   let transformBuffer = buffer
   let transformName = null
+  let transformDuration = null
   for (const profile of profiles) {
     const envVarCmd = `BOTIUM_SPEECH_CONVERT_PROFILE_${profile.toUpperCase()}_CMD`
     if (!process.env[envVarCmd]) {
@@ -632,17 +658,20 @@ router.post('/api/convert', async (req, res, next) => {
     const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${profile.toUpperCase()}_OUTPUT`
 
     try {
-      const { outputName, outputBuffer } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: transformBuffer, start: req.query.start, end: req.query.end })
+      const { outputName, outputBuffer, outputDuration } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: transformBuffer, start: req.query.start, end: req.query.end })
       transformBuffer = outputBuffer
       transformName = outputName
+      transformDuration = outputDuration
     } catch (err) {
       return next(err)
     }
   }
-  res.writeHead(200, {
+  const headers = {
     'Content-disposition': `attachment; filename="${transformName}"`,
     'Content-Length': transformBuffer.length
-  })
+  }
+  _addContentDurationHeaders(transformDuration, headers)
+  res.writeHead(200, headers)
   res.end(transformBuffer)
 })
 
@@ -726,6 +755,7 @@ const wssStreams = {}
     const streamId = uuidv1()
     const stream = await stt.stt_OpenStream(req, { language: req.params.language })
     stream.events.on('close', () => delete wssStreams[streamId])
+    stream.dateTimeStart = new Date()
     wssStreams[streamId] = stream
 
     const baseUrls = readBaseUrls(req)
@@ -764,7 +794,8 @@ const wssStreams = {}
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttstatus/:streamId', async (req, res, next) => {
   const stream = wssStreams[req.params.streamId]
   if (stream) {
-    res.status(200).json({ status: 'OK', streamId: req.params.streamId })
+    const streamDuration = ((new Date() - stream.dateTimeStart) / 1000).toFixed(3)
+    res.status(200).json({ status: 'OK', streamId: req.params.streamId, streamDuration })
   } else {
     res.status(404).json({ status: 'NOTFOUND', streamId: req.params.streamId })
   }
@@ -810,6 +841,7 @@ const wssUpgrade = (req, socket, head) => {
   const wss1 = new WebSocketServer({ noServer: true })
   wss1.on('connection', async (ws) => {
     stream.events.on('data', (data) => {
+      data.streamDuration = ((new Date() - stream.dateTimeStart) / 1000).toFixed(3)
       ws.send(JSON.stringify(data))
     })
     stream.events.on('close', () => {
