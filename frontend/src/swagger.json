@@ -358,6 +358,39 @@
         }
       }
     },
+    "/api/audio/info": {
+      "post": {
+        "description": "Returns information about audio file",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Audio file",
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/convertprofiles": {
       "get": {
         "description": "Get list of audio conversion profile",
