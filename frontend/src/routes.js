@@ -483,6 +483,51 @@ router.post('/api/stt/:language', async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/audio/info:
+ *   post:
+ *     description: Returns information about audio file
+ *     security:
+ *       - ApiKeyAuth: []
+ *     requestBody:
+ *       description: Audio file
+ *       content:
+ *         audio/wav:
+ *           schema:
+ *             type: string
+ *             format: binary
+ *     responses:
+ *       200:
+ *         description: Audio information
+ *         content:
+ *            application/json:
+ *              schema:
+ *                type: object
+ */
+router.post('/api/audio/info', async (req, res, next) => {
+  let buffer = null
+  if (Buffer.isBuffer(req.body)) {
+    buffer = req.body
+  } else {
+    buffer = await extractMultipartContent(req, res)
+  }
+
+  if (!buffer) {
+    return next(new Error('req.body is not a buffer'))
+  }
+
+  const duration = await getAudioLengthSeconds(buffer)
+
+  try {
+    res.json({
+      duration
+    })
+  } catch (err) {
+    return next(err)
+  }
+})
+
+/**
+ * @swagger
  * /api/convertprofiles:
  *   get:
  *     description: Get list of audio conversion profile
