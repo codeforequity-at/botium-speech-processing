@@ -4,8 +4,6 @@ const debug = require('debug')('botium-speech-processing-google-tts')
 
 const { googleOptions, ttsFilename } = require('../utils')
 
-let googleVoices = null
-
 const genderMap = {
   MALE: 'male',
   FEMALE: 'female',
@@ -13,15 +11,13 @@ const genderMap = {
 }
 
 class GoogleTTS {
-  async voices () {
-    if (googleVoices) return googleVoices
-
-    const client = new textToSpeech.TextToSpeechClient(googleOptions())
+  async voices (req) {
+    const client = new textToSpeech.TextToSpeechClient(googleOptions(req))
 
     const [result] = await client.listVoices({})
     const voices = result.voices
 
-    googleVoices = []
+    const googleVoices = []
     voices.forEach(voice => {
       voice.languageCodes.forEach(languageCode => {
         googleVoices.push({
@@ -34,12 +30,12 @@ class GoogleTTS {
     return googleVoices
   }
 
-  async languages () {
-    const voicesList = await this.voices()
+  async languages (req) {
+    const voicesList = await this.voices(req)
     return _.uniq(voicesList.map(v => v.language)).sort()
   }
 
-  async tts ({ language, voice, text }) {
+  async tts (req, { language, voice, text }) {
     const voiceSelector = {
       languageCode: language
     }
@@ -47,13 +43,16 @@ class GoogleTTS {
       voiceSelector.name = voice
     }
 
-    const client = new textToSpeech.TextToSpeechClient(googleOptions())
+    const client = new textToSpeech.TextToSpeechClient(googleOptions(req))
     const request = {
       input: {
         text
       },
       voice: voiceSelector,
       audioConfig: { audioEncoding: 'LINEAR16', sampleRateHertz: 16000 }
+    }
+    if (req.body.google && req.body.google.config) {
+      Object.assign(request, req.body.google.config)
     }
 
     try {
@@ -64,7 +63,7 @@ class GoogleTTS {
       }
     } catch (err) {
       debug(err)
-      throw new Error(`Google Cloud STT failed: ${err.message}`)
+      throw new Error(`Google Cloud TTS failed: ${err.message}`)
     }
   }
 }

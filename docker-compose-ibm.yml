@@ -1,0 +1,22 @@
+version: '3'
+services:
+  nginx:
+    image: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+  frontend:
+    image: botium/botium-speech-frontend:latest
+    restart: always
+    environment:
+      BOTIUM_API_TOKENS: 
+      BOTIUM_SPEECH_PROVIDER_TTS: ibm
+      BOTIUM_SPEECH_PROVIDER_STT: ibm
+      BOTIUM_SPEECH_IBM_STT_APIKEY:
+      BOTIUM_SPEECH_IBM_STT_SERVICEURL:
+      BOTIUM_SPEECH_IBM_TTS_APIKEY:
+      BOTIUM_SPEECH_IBM_TTS_SERVICEURL:
+    volumes:
+      - "./frontend/resources:/app/resources"

@@ -1,0 +1,20 @@
+version: '3'
+services:
+  nginx:
+    image: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+  frontend:
+    image: botium/botium-speech-frontend:latest
+    restart: always
+    environment:
+      BOTIUM_API_TOKENS: 
+      BOTIUM_SPEECH_PROVIDER_TTS: azure
+      BOTIUM_SPEECH_PROVIDER_STT: azure
+      BOTIUM_SPEECH_AZURE_SUBSCRIPTION_KEY:
+      BOTIUM_SPEECH_AZURE_REGION:
+    volumes:
+      - "./frontend/resources:/app/resources"

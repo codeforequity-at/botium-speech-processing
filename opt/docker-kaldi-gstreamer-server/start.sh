@@ -37,6 +37,6 @@ if [ "$MASTER" == "localhost" ] ; then
 fi
 
 #start worker and connect it to the master
-export GST_PLUGIN_PATH=/opt/gst-kaldi-nnet2-online/src/:/opt/kaldi/src/gst-plugin/
+export GST_PLUGIN_PATH=/opt/gst-kaldi-nnet2-online/src/:/opt/kaldi/src/gst-plugin/:/usr/lib/x86_64-linux-gnu/gstreamer-1.0
 
 python /opt/kaldi-gstreamer-server/kaldigstserver/worker.py -c $YAML -u ws://$MASTER:$PORT/worker/ws/speech 2>> /opt/worker.log &

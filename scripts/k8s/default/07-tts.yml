@@ -1,0 +1,43 @@
+---
+# Source: botium-speech-processing/templates/07-tts.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tts
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 59125
+      targetPort: 59125
+  selector:
+    name: tts
+    app: botium-speech-processing
+---
+# Source: botium-speech-processing/templates/07-tts.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tts
+  labels:
+    name: tts
+    app: botium-speech-processing
+    tier: tts
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      name: tts
+      app: botium-speech-processing
+  template:
+    metadata:
+      labels:
+        name: tts
+        app: botium-speech-processing
+        tier: tts
+    spec:
+      containers:
+        - name: tts
+          image: botium/botium-speech-marytts:latest

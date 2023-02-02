@@ -14,6 +14,9 @@ RUN apt-get update && \
 COPY models/zamia_20190609_tdnn_fl_en.yaml /opt/models/zamia_20190609_tdnn_fl_en.yaml
 COPY supervisord.kaldi.en.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 80
+EXPOSE 56180
 
-CMD ["/usr/bin/supervisord"]
+RUN groupadd --gid 1000 kaldi && useradd --uid 1000 --gid kaldi --shell /bin/bash --create-home kaldi
+RUN mkdir /opt/logs && chown -R 1000:1000 /opt/models /opt/logs
+USER kaldi
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

@@ -18,9 +18,3 @@ services:
       BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
     volumes:
       - "./frontend/resources:/app/resources"
-  watcher:
-    image: botium/botium-speech-watcher:latest
-    restart: always
-    volumes:
-      - "./watcher:/app/watch"
-      - "./logs/watcher:/app/logs"

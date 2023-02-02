@@ -18,7 +18,7 @@ decoder:
     chunk-length-in-secs: 0.25
     num-nbest: 10
     phone-syms: /opt/models/kaldi-generic-en-tdnn_fl-r20190609/model/graph/phones.txt
-out-dir: tmp
+out-dir: /opt/models/tmp
 
 use-vad: False
 silence-timeout: 15

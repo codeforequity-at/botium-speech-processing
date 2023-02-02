@@ -26,20 +26,20 @@ Some examples what you can do with this:
 * Build voice-enabled chatbot services (for example, IVR systems)
   * see the [Rasa Custom Voice Channel](./connectors/rasa)
 * Classification of audio file transcriptions
-* [Automated Testing](https://chatbotslife.com/testing-alexa-skills-with-avs-mocha-and-botium-f6c22549f66e) of Voice services with [Botium](https://medium.com/@floriantreml/botium-in-a-nutshell-part-1-overview-f8d0ceaf8fb4)
+* [Automated Testing](https://wiki.botiumbox.com/how-to-guides/voice-app-testing/) of Voice services with [Botium](https://botium.ai)
 
 ## Installation
 
 ### Software and Hardware Requirements
 
-* 8GB of RAM (accessible for Docker) and 40GB free HD space
+* 8GB of RAM (accessible for Docker) and 40GB free HD space (for full installation)
 * Internet connectivity
 * [docker](https://docs.docker.com/)
 * [docker-compose](https://docs.docker.com/compose/)
 
-_Note: memory usage can be reduced if only one language is required - default configuration comes with two languages._
+_Note: memory usage can be reduced if only one language for Kaldi is required - default configuration comes with two languages._
 
-### Use Prebuilt Docker Images
+### Full Installation (Prebuilt Docker Images)
 
 Clone or download this repository and start with docker-compose:
 
@@ -50,6 +50,12 @@ This will download the latest released prebuilt images from Dockerhub. To downlo
     > docker-compose --env-file .env.develop up
 
 Point your browser to http://127.0.0.1 to open the [Swagger UI](https://swagger.io/tools/swagger-ui/) and browse/use the API definition.
+
+### Slim Cloud-Specific Installation (Prebuilt Docker Images)
+
+For the major cloud providers there are additional docker-compose files. If using those, the installation is more slim, as there is only the *frontend*-service required. For instance, add your Azure subscription key and Azure region key to the file *docker-compose-azure.yml* and start the services:
+
+    > docker-compose -f docker-compose-azure.yml up -d
 
 ### Optional: Build Docker Images
 
@@ -74,6 +80,15 @@ Configuration changes with [environment variables](./frontend/resources/.env). S
 
 **Recommendation:** Do not change the _.env_ file but create a _.env.local_ file to overwrite the default settings. This will prevent troubles on future _git pull_
 
+### Request-Specific Configuration
+
+If there is a JSON-formatted request body, or a multipart request body, certain sections are considered:
+
+* **credentials** to override the server default credentials for cloud services
+* **config** to override the server default settings for the cloud API calls
+
+*See samples below*
+
 ### Securing the API
 
 The environment variable _BOTIUM_API_TOKENS_ contains a list of valid API Tokens accepted by the server (separated by whitespace or comma). The HTTP Header _BOTIUM_API_TOKEN_ is validated on each call to the API.
@@ -96,14 +111,12 @@ _Attention: in Google Chrome this only works with services published as HTTPS, y
 Point your browser to http://127.0.0.1/tts to open a MaryTTS interface for testing speech synthesis.
 
 ### Real Time API
-_Available for Kaldi only_
 
-There are Websocket endpoints exposed for real-time audio decoding. Find the API description in the [Kaldi GStreamer Server documentation](https://github.com/alumae/kaldi-gstreamer-server#websocket-based-client-server-protocol).
+It is possible to stream audio from real-time audio decoding: Call the **/api/sttstream/{language}** endpoint to open a websocket stream, it will return three urls:
 
-The Websocket endpoints are:
-
-* English: ws://127.0.0.1/stt-en/client/ws/speech
-* German: ws://127.0.0.1/stt-de/client/ws/speech
+* wsUri - the Websocket uri to stream your audio to. By default, it accepts wav-formatted audio-chunks
+* statusUri - check if the stream is still open
+* endUri - end audio streaming and close websocket
 
 ## File System Watcher
 
@@ -124,6 +137,18 @@ See [swagger.json](./frontend/src/swagger.json):
 * HTTP POST to **/api/stt/{language}** for Speech-To-Text
 
     > curl -X POST "http://127.0.0.1/api/stt/en" -H "Content-Type: audio/wav" -T sample.wav
+
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text with Google, including credentials
+
+    > curl -X POST "http://127.0.0.1/api/stt/en-US?stt=google" -F "google={\"credentials\": {\"private_key\": \"xxx\", \"client_email\": \"xxx\"}}" -F content=@sample.wav
+
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text with Google, including switch to MP3 encoding
+
+    > curl -X POST "http://127.0.0.1/api/stt/en-US?stt=google" -F "google={\"config\": {\"encoding\": \"MP3\"}}" -F content=@sample.mp3
+
+* HTTP POST to **/api/stt/{language}** for Speech-To-Text with IBM, including credentials
+
+    > curl -X POST "http://127.0.0.1/api/stt/en-US?stt=ibm" -F "google={\"credentials\": {\"apikey\": \"xxx\", \"serviceUrl\": \"xxx\"}}" -F content=@sample.wav
 
 * HTTP GET to **/api/tts/{language}?text=...** for Text-To-Speech
 
@@ -154,6 +179,25 @@ This project is standing on the shoulders of giants.
 * **[dictate.js](https://github.com/Kaljurand/dictate.js)**
 
 ## Changelog
+
+### 2022-03-06
+* Voice effects to consider audio file length
+
+### 2022-02-28
+
+* Applied Security Best Practices (not run as root user)
+
+### 2022-01-12
+
+* Added support for Azure Speech Services
+
+### 2021-12-07
+
+* Added endpoints for streaming audio and responses
+
+### 2021-12-01
+
+* Added option to hand over cloud credentials in request body
 
 ### 2021-01-26
 

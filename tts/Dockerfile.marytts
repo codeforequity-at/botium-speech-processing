@@ -10,5 +10,10 @@ WORKDIR /app/marytts-installer
 RUN cat components.json | jq .[].artifact | xargs ./marytts install
 
 EXPOSE 59125
+
+RUN addgroup --gid 1000 marytts && adduser --uid 1000 --ingroup marytts --disabled-password --shell /bin/bash marytts
+RUN chown -R 1000:1000 /app/marytts-installer
+USER marytts
+
 ENV JAVA_OPTS -Xmx2g
 CMD ./marytts

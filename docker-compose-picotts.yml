@@ -8,6 +8,8 @@ services:
     ports:
       - 80:80
   frontend:
+    build:
+      context: frontend
     image: botium/botium-speech-frontend:latest
     restart: always
     environment:
@@ -16,22 +18,22 @@ services:
       BOTIUM_SPEECH_PROVIDER_STT: kaldi
     volumes:
       - "./frontend/resources:/app/resources"
-  watcher:
-    image: botium/botium-speech-watcher:latest
-    restart: always
-    volumes:
-      - "./watcher:/app/watch"
-      - "./logs/watcher:/app/logs"
-  stt-en:
-    image: botium/botium-speech-kaldi-en:latest
-    restart: always
-    volumes:
-      - "./logs/stt-en:/opt/logs"
-  stt-de:
-    image: botium/botium-speech-kaldi-de:latest
-    restart: always
-    volumes:
-      - "./logs/stt-de:/opt/logs"
-  dictate:
-    image: botium/botium-speech-dictate:latest
-    restart: always
+#  watcher:
+#    image: botium/botium-speech-watcher:latest
+#    restart: always
+#    volumes:
+#      - "./watcher:/app/watch"
+#      - "./logs/watcher:/app/logs"
+#  stt-en:
+#    image: botium/botium-speech-kaldi-en:latest
+#    restart: always
+#    volumes:
+#      - "./logs/stt-en:/opt/logs"
+#  stt-de:
+#    image: botium/botium-speech-kaldi-de:latest
+#    restart: always
+#    volumes:
+#      - "./logs/stt-de:/opt/logs"
+#  dictate:
+#    image: botium/botium-speech-dictate:latest
+#    restart: always

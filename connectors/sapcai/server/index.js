@@ -6,7 +6,7 @@ const app = require('express')()
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 
-const SAPCAI_TOKEN = '5ee1b84709db76f5bbff8ea14dc9ad85'
+const SAPCAI_TOKEN = process.env.SAPCAI_TOKEN
 
 app.use(cors())
 
@@ -94,7 +94,8 @@ io.on('connection', (socket) => {
             method: 'GET',
             url: 'https://speech.botiumbox.com/api/tts/en',
             params: {
-              text: message.content
+              text: message.content,
+              voice: 'dfki-poppy-hsmm'
             },
             responseType: 'arraybuffer'
           }

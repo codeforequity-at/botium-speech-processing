@@ -1,7 +1,5 @@
 version: '3'
 services:
-  dictate:
-    image: botium/botium-speech-dictate:develop
+  frontend:
     environment:
-      STT_URL_DE: wss://speech.botiumbox.com/stt-de
-      STT_URL_EN: wss://speech.botiumbox.com/stt-en
+      BOTIUM_SPEECH_URL: https://speech.botiumbox.com

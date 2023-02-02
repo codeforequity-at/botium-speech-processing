@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Botium Speech Processing API",
-    "version": "1.0.3",
+    "version": "1.5.0",
     "description": "Botium Speech Processing API"
   },
   "basePath": "/",
@@ -57,7 +57,10 @@
               "type": "string",
               "enum": [
                 "kaldi",
-                "google"
+                "google",
+                "ibm",
+                "azure",
+                "awstranscribe"
               ]
             }
           }
@@ -98,7 +101,16 @@
           },
           {
             "name": "hint",
-            "description": "Hint text for calculating the Levenshtein edit distance for the result text (word error rate)",
+            "description": "Hint text for the Speech-to-text backend (supported by google and azure)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "wer",
+            "description": "Text for calculating the Levenshtein edit distance for the result text (word error rate)",
             "in": "query",
             "required": false,
             "schema": {
@@ -114,7 +126,23 @@
               "type": "string",
               "enum": [
                 "kaldi",
-                "google"
+                "google",
+                "ibm",
+                "azure",
+                "awstranscribe"
+              ]
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Use result cache (default Y)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Y",
+                "N"
               ]
             }
           }
@@ -165,6 +193,9 @@
               "type": "string",
               "enum": [
                 "google",
+                "ibm",
+                "azure",
+                "polly",
                 "marytts",
                 "picotts"
               ]
@@ -220,6 +251,9 @@
               "type": "string",
               "enum": [
                 "google",
+                "ibm",
+                "azure",
+                "polly",
                 "marytts",
                 "picotts"
               ]
@@ -287,8 +321,24 @@
               "type": "string",
               "enum": [
                 "google",
+                "ibm",
+                "azure",
+                "polly",
                 "marytts",
                 "picotts"
+              ]
+            }
+          },
+          {
+            "name": "cache",
+            "description": "Use result cache (default Y)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Y",
+                "N"
               ]
             }
           }
@@ -301,6 +351,39 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audio/info": {
+      "post": {
+        "description": "Returns information about audio file",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Audio file",
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
                 }
               }
             }
@@ -406,6 +489,77 @@
         }
       }
     },
+    "/api/convert": {
+      "post": {
+        "description": "Convert audio file in multiple steps",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "audio/*"
+        ],
+        "parameters": [
+          {
+            "name": "profile",
+            "description": "Conversion profile (for example WAVTOMONOWAV, MP3TOMONOWAV)",
+            "in": "query",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "start",
+            "description": "Start Timecode within audio stream (01:32)",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-5][0-9]):([0-5][0-9])$"
+            }
+          },
+          {
+            "name": "end",
+            "description": "End Timecode within audio stream (02:48)",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^([0-5][0-9]):([0-5][0-9])$"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Audio file",
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audio file",
+            "content": {
+              "audio/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/wer": {
       "get": {
         "description": "Calculate Levenshtein edit distance between two strings (word error rate)",
@@ -450,6 +604,125 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/sttstream/{language}": {
+      "post": {
+        "description": "Open a Websocket stream vor converting audio stream to text",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "language",
+            "description": "Language code (as returned from sttlanguages endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stt",
+            "description": "Speech-to-text backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "kaldi",
+                "google",
+                "ibm",
+                "azure",
+                "awstranscribe"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket Url to stream the audio to, and the uri to check status and end the stream",
+            "schema": {
+              "properties": {
+                "wsUri": {
+                  "type": "string"
+                },
+                "statusUri": {
+                  "type": "string"
+                },
+                "endUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sttstatus/{streamId}": {
+      "get": {
+        "description": "Check a Websocket stream for converting audio stream to text",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "streamId",
+            "description": "Stream Id (as returned from sttstream endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket stream ok"
+          },
+          "404": {
+            "description": "Websocket stream not available"
+          }
+        }
+      }
+    },
+    "/api/sttend/{streamId}": {
+      "get": {
+        "description": "Close a Websocket stream for converting audio stream to text",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "streamId",
+            "description": "Stream Id (as returned from sttstream endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket stream closed"
           }
         }
       }

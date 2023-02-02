@@ -1,0 +1,14 @@
+{
+  "name": "ws-sample",
+  "version": "1.0.0",
+  "scripts": {
+    "file": "node file.js",
+    "record": "node record.js"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "lodash": "^4.17.21",
+    "node-record-lpcm16": "^1.0.1",
+    "ws": "^8.3.0"
+  }
+}

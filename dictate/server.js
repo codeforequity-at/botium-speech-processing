@@ -2,25 +2,26 @@ const fs = require('fs')
 const express = require('express')
 
 const app = express()
-app.disable('etag')
-app.set('trust proxy', true)
 const port = process.env.PORT || 56100
-const dictateDir = process.env.DICTATEDIR || './dictate.js'
+const dictateDir = process.env.DICTATEDIR || './dictate.js-master'
+
+const wsScript = `
+  var sttUrlDe = new URL('/stt-de', window.location.href);
+  sttUrlDe.protocol = sttUrlDe.protocol.replace('http', 'ws');
+  var sttUrlEn = new URL('/stt-en', window.location.href);
+  sttUrlEn.protocol = sttUrlEn.protocol.replace('http', 'ws');
+  
+  var serversElement = document.getElementById('servers')
+  serversElement.options[0] = new Option("English", sttUrlEn.href + "/client/ws/speech|" + sttUrlEn.href + "/client/ws/status", true, false)
+  serversElement.options[1] = new Option("German", sttUrlDe.href + "/client/ws/speech|" + sttUrlDe.href + "/client/ws/status", false, false)
+`
 
 app.get('/demos/mob.html', (req, res) => {
   let mobHtml = fs.readFileSync(`${dictateDir}/demos/mob.html`, { encoding: 'utf-8' })
 
-  const wsProtocol = (req.protocol === 'https' ? 'wss:' : 'ws:')
-  const sttUrlDe = process.env.STT_URL_DE || `${wsProtocol}//${req.hostname}/stt-de`
-  const sttUrlEn = process.env.STT_URL_EN || `${wsProtocol}//${req.hostname}/stt-en`
-
   mobHtml = mobHtml.replace(
-    '<option value="wss://bark.phon.ioc.ee:8443/dev/duplex-speech-api/ws/speech|wss://bark.phon.ioc.ee:8443/dev/duplex-speech-api/ws/status">eesti keel</option>',
-    `<option value="${sttUrlDe}/client/ws/speech|${sttUrlDe}/client/ws/status">German</option>`
-  )
-  mobHtml = mobHtml.replace(
-    '<option value="wss://bark.phon.ioc.ee:8443/english/duplex-speech-api/ws/speech|wss://bark.phon.ioc.ee:8443/english/duplex-speech-api/ws/status" selected="selected">English</option>',
-    `<option value="${sttUrlEn}/client/ws/speech|${sttUrlEn}/client/ws/status" selected="selected">English</option>`
+    '<script src="mob.js"></script>',
+    `<script src="mob.js"></script><script>${wsScript}</script>`
   )
 
   res.header('Content-Type', 'text/html')
