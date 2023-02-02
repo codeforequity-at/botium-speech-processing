@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Unified Speech Processing",
   "scripts": {
-    "prepare": "rm -rf ./dictate.js-master && curl -L -o dicatejs.zip \"https://github.com/Kaljurand/dictate.js/archive/master.zip\" && unzip dicatejs.zip && rm dicatejs.zip",
+    "prepare": "rm -rf ./dictate.js-master && curl -L -o dicatejs.zip \"https://github.com/Kaljurand/dictate.js/archive/master.zip\" && unzip -o dicatejs.zip && rm dicatejs.zip",
     "start": "node server.js"
   },
   "author": "Botium GmbH",

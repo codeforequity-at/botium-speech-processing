@@ -7,7 +7,7 @@ COPY . /app
 RUN find . -type f -print0 | xargs -0 dos2unix
 RUN npm install --no-optional --production
 
-RUN curl -L -o dicatejs.zip "https://github.com/Kaljurand/dictate.js/archive/master.zip" && unzip dicatejs.zip && rm dicatejs.zip
+RUN curl -L -o dicatejs.zip "https://github.com/Kaljurand/dictate.js/archive/master.zip" && unzip -o dicatejs.zip && rm dicatejs.zip
 
 EXPOSE 56100
 
