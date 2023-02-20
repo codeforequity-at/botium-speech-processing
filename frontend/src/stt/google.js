@@ -78,6 +78,7 @@ class GoogleSTT {
       const alternative = data.results[0] && data.results[0].alternatives[0]
       if (alternative && alternative.transcript) {
         const event = {
+          status: 'ok',
           text: alternative.transcript,
           final: !!data.results[0].isFinal,
           debug: data
@@ -91,6 +92,7 @@ class GoogleSTT {
     })
     recognizeStream.on('error', (err) => {
       events.emit('data', {
+        status: 'error',
         err: `${err.message}`
       })
     })

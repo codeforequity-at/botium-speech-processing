@@ -48,6 +48,7 @@ class IbmSTT {
         const transcription = result.alternatives[0] ? result.alternatives[0].transcript : null
         if (transcription) {
           const event = {
+            status: 'ok',
             text: transcription,
             final: !!result.final,
             debug: result
@@ -62,6 +63,7 @@ class IbmSTT {
     })
     recognizeStream.on('error', (err) => {
       events.emit('data', {
+        status: 'error',
         err: `${err.message}`
       })
     })

@@ -50,6 +50,7 @@ class KaldiSTT {
             const hypotheses = dj.result && dj.result.hypotheses && dj.result.hypotheses[0]
             if (hypotheses && hypotheses.transcript) {
               const event = {
+                status: 'ok',
                 text: hypotheses.transcript,
                 final: !!dj.result.final,
                 debug: dj
@@ -66,6 +67,7 @@ class KaldiSTT {
         })
         ws.on('error', (err) => {
           events.emit('data', {
+            status: 'error',
             err: `${err.message}`
           })
         })

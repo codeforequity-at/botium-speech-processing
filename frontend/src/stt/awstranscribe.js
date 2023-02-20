@@ -88,6 +88,7 @@ class AwsTranscribeSTT {
             if (results && results.length > 0) {
               for (const result of results) {
                 const event = {
+                  status: 'ok',
                   text: result.Alternatives[0].Transcript,
                   final: !result.IsPartial,
                   start: result.StartTime,
@@ -101,6 +102,7 @@ class AwsTranscribeSTT {
         } catch (err) {
           debug(`TranscriptResultStream failure: ${err.Message || err.message || err}`)
           events.emit('data', {
+            status: 'error',
             err: `${err.message || err}`
           })
         }

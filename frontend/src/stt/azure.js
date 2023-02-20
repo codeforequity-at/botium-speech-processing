@@ -56,6 +56,7 @@ class AzureSTT {
     const recognizedHandler = (s, e) => {
       if (e.result.reason === ResultReason.RecognizedSpeech || e.result.reason === ResultReason.RecognizingSpeech) {
         const event = {
+          status: 'ok',
           text: e.result.text,
           final: e.result.reason === ResultReason.RecognizedSpeech,
           debug: e.result
@@ -70,6 +71,13 @@ class AzureSTT {
     recognizer.sessionStopped = (s, e) => {
       recognizer.stopContinuousRecognitionAsync()
       events.emit('close')
+    }
+    recognizer.canceled = (s, e) => {
+      const event = {
+        status: 'error',
+        err: e.errorDetails
+      }
+      events.emit('data', event)
     }
     recognizer.startContinuousRecognitionAsync()
 
