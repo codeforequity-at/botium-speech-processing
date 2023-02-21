@@ -51,7 +51,7 @@ class AzureSTT {
     const audioConfig = AudioConfig.fromStreamInput(pushStream)
     const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
 
-    this.events = new EventEmitter()
+    const events = new EventEmitter()
 
     const recognizedHandler = (s, e) => {
       if (e.result.reason === ResultReason.RecognizedSpeech || e.result.reason === ResultReason.RecognizingSpeech) {
@@ -63,7 +63,7 @@ class AzureSTT {
         }
         event.start = _.round(e.result.offset / 10000000, 3)
         event.end = _.round((e.result.offset + e.result.duration) / 10000000, 3)
-        this.events.emit('data', event)
+        events.emit('data', event)
       }
     }
     recognizer.recognizing = recognizedHandler
@@ -79,7 +79,7 @@ class AzureSTT {
           status: 'error',
           err: 'test'
         }
-        this.events.emit('data', event)
+        events.emit('data', event)
       }, 100)
     }
     recognizer.startContinuousRecognitionAsync()
@@ -90,7 +90,7 @@ class AzureSTT {
         reject(new Error(`Azure STT failed: ${getAzureErrorDetails(e)}`))
       } */
       resolve({
-        events: this.events,
+        events,
         write: (buffer) => {
           pushStream.write(buffer)
         },
