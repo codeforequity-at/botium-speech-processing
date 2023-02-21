@@ -69,7 +69,7 @@ class AzureSTT {
     recognizer.recognizing = recognizedHandler
     recognizer.recognized = recognizedHandler
     recognizer.sessionStopped = (s, e) => {
-      recognizer.stopContinuousRecognitionAsync()
+      // recognizer.stopContinuousRecognitionAsync()
       // events.emit('close')
     }
     recognizer.canceled = (s, e) => {
@@ -86,20 +86,18 @@ class AzureSTT {
         recognizer.stopContinuousRecognitionAsync()
         reject(new Error(`Azure STT failed: ${getAzureErrorDetails(e)}`))
       } */
-      recognizer.speechStartDetected = (s, e) => {
-        resolve({
-          events,
-          write: (buffer) => {
-            pushStream.write(buffer)
-          },
-          end: () => {
-          },
-          close: () => {
-            recognizer.stopContinuousRecognitionAsync()
-            pushStream.close()
-          }
-        })
-      }
+      resolve({
+        events,
+        write: (buffer) => {
+          pushStream.write(buffer)
+        },
+        end: () => {
+        },
+        close: () => {
+          recognizer.stopContinuousRecognitionAsync()
+          pushStream.close()
+        }
+      })
     })
   }
 
