@@ -99,7 +99,7 @@ class AzureSTT {
             pushStream.close()
           }
         })
-      }, 500)
+      }, 1000)
     })
   }
 
