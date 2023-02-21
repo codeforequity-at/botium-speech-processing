@@ -69,8 +69,8 @@ class AzureSTT {
     recognizer.recognizing = recognizedHandler
     recognizer.recognized = recognizedHandler
     recognizer.sessionStopped = (s, e) => {
-      // recognizer.stopContinuousRecognitionAsync()
-      // events.emit('close')
+      recognizer.stopContinuousRecognitionAsync()
+      events.emit('close')
     }
     recognizer.canceled = (s, e) => {
       console.log(e.errorDetails)
@@ -79,7 +79,7 @@ class AzureSTT {
           status: 'error',
           err: 'test'
         }
-        events.emit('error', event)
+        events.emit('data', event)
       }, 0)
     }
     recognizer.startContinuousRecognitionAsync()

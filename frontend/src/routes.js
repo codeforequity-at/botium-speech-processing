@@ -889,10 +889,6 @@ const wssUpgrade = (req, socket, head) => {
       data.streamDuration = ((new Date() - stream.dateTimeStart) / 1000).toFixed(3)
       ws.send(JSON.stringify(data))
     })
-    stream.events.on('error', (data) => {
-      console.log(data)
-      ws.send(JSON.stringify(data))
-    })
     stream.events.on('close', () => {
       ws.close()
       wss1.close()
