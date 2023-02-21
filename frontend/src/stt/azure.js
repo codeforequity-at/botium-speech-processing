@@ -82,11 +82,11 @@ class AzureSTT {
     recognizer.startContinuousRecognitionAsync()
 
     return new Promise((resolve, reject) => {
-      /* recognizer.canceled = (s, e) => {
+      recognizer.canceled = (s, e) => {
         recognizer.stopContinuousRecognitionAsync()
         reject(new Error(`Azure STT failed: ${getAzureErrorDetails(e)}`))
-      } */
-      recognizer.sessionStarted = (s, e) => {
+      }
+      setTimeout(() => {
         resolve({
           events,
           write: (buffer) => {
@@ -99,7 +99,7 @@ class AzureSTT {
             pushStream.close()
           }
         })
-      }
+      }, 500)
     })
   }
 
