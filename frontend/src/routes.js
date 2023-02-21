@@ -870,7 +870,7 @@ const wssStreams = {}
   const stream = wssStreams[req.params.streamId]
   if (stream) {
     try {
-      stream.end()
+      // stream.end()
     } catch (err) {
       return next(err)
     }
