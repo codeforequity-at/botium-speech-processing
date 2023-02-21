@@ -1,16 +1,11 @@
 version: '3'
 services:
-  nginx:
-    image: nginx
-    restart: always
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    ports:
-      - 80:80
   frontend:
     image: botium/botium-speech-frontend:${TAG}
     restart: always
     user: 1000:1000
+    ports:
+    - 80:56000
     environment:
       BOTIUM_API_TOKENS:
       BOTIUM_SPEECH_PROVIDER_TTS: marytts
@@ -19,32 +14,5 @@ services:
       BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
     volumes:
       - "./frontend/resources:/app/resources"
-  watcher:
-    image: botium/botium-speech-watcher:${TAG}
-    restart: always
-    user: 1000:1000
-    volumes:
-      - "./watcher:/app/watch"
-      - logs:/app/logs
-  stt-en:
-    image: botium/botium-speech-kaldi-en:${TAG}
-    restart: always
-    user: 1000:1000
-    volumes:
-      - logs:/opt/logs
-  stt-de:
-    image: botium/botium-speech-kaldi-de:${TAG}
-    restart: always
-    user: 1000:1000
-    volumes:
-      - logs:/opt/logs
-  tts:
-    image: botium/botium-speech-marytts:${TAG}
-    restart: always
-    user: 1000:1000
-  dictate:
-    image: botium/botium-speech-dictate:${TAG}
-    restart: always
-    user: 1000:1000
 volumes:
   logs:
