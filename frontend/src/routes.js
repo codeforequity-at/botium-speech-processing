@@ -904,7 +904,7 @@ const wssUpgrade = (req, socket, head) => {
     })
     ws.on('close', () => {
       delete wssStreams[streamId]
-      // stream.close()
+      stream.close()
       wss1.close()
     })
   })
