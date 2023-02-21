@@ -76,18 +76,11 @@ class AzureSTT {
       console.log(e.errorDetails)
       const event = {
         status: 'error',
-        err: e.errorDetails
+        err: 'test'
       }
       events.emit('data', event)
     }
     recognizer.startContinuousRecognitionAsync()
-    setTimeout(() => {
-      const event = {
-        status: 'error',
-        err: 'test'
-      }
-      events.emit('data', event)
-    }, 10000)
 
     return new Promise((resolve, reject) => {
       /* recognizer.canceled = (s, e) => {
