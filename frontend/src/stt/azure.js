@@ -97,8 +97,8 @@ class AzureSTT {
         end: () => {
         },
         close: () => {
-          recognizer.stopContinuousRecognitionAsync()
-          pushStream.close()
+          // recognizer.stopContinuousRecognitionAsync()
+          // pushStream.close()
         }
       })
     })
