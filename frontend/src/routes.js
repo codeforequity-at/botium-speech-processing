@@ -890,6 +890,7 @@ const wssUpgrade = (req, socket, head) => {
       ws.send(JSON.stringify(data))
     })
     stream.events.on('error', (data) => {
+      console.log(data)
       ws.send(JSON.stringify(data))
     })
     stream.events.on('close', () => {
