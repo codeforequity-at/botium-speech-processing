@@ -886,11 +886,8 @@ const wssUpgrade = (req, socket, head) => {
   const wss1 = new WebSocketServer({ noServer: true })
   wss1.on('connection', async (ws) => {
     stream.events.on('data', (data) => {
+      if (data.err) console.log(data)
       data.streamDuration = ((new Date() - stream.dateTimeStart) / 1000).toFixed(3)
-      ws.send(JSON.stringify(data))
-    })
-    stream.events.on('error2', (data) => {
-      console.log(data)
       ws.send(JSON.stringify(data))
     })
     stream.events.on('close', () => {
