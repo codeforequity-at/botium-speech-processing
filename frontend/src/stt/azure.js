@@ -80,7 +80,7 @@ class AzureSTT {
           err: 'test'
         }
         events.emit('data', event)
-      }, 0)
+      }, 100)
     }
     recognizer.startContinuousRecognitionAsync()
 
