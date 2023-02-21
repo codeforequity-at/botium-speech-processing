@@ -53,40 +53,38 @@ class AzureSTT {
 
     const events = new EventEmitter()
 
-    const recognizedHandler = (s, e) => {
-      if (e.result.reason === ResultReason.RecognizedSpeech || e.result.reason === ResultReason.RecognizingSpeech) {
-        const event = {
-          status: 'ok',
-          text: e.result.text,
-          final: e.result.reason === ResultReason.RecognizedSpeech,
-          debug: e.result
-        }
-        event.start = _.round(e.result.offset / 10000000, 3)
-        event.end = _.round((e.result.offset + e.result.duration) / 10000000, 3)
-        events.emit('data', event)
-      }
-    }
-    recognizer.recognizing = recognizedHandler
-    recognizer.recognized = recognizedHandler
-    recognizer.sessionStopped = (s, e) => {
-      // recognizer.stopContinuousRecognitionAsync()
-      // events.emit('close')
-    }
-    recognizer.canceled = (s, e) => {
-      console.log(e.errorDetails)
-      events.on('error2', (data) => console.log('a', data))
-      setTimeout(() => {
-        const event = {
-          status: 'error',
-          err: 'test'
-        }
-        events.emit('error2', event)
-      }, 100)
-      events.on('error2', (data) => console.log('b', data))
-    }
-    recognizer.startContinuousRecognitionAsync()
-
     return new Promise((resolve, reject) => {
+      const recognizedHandler = (s, e) => {
+        if (e.result.reason === ResultReason.RecognizedSpeech || e.result.reason === ResultReason.RecognizingSpeech) {
+          const event = {
+            status: 'ok',
+            text: e.result.text,
+            final: e.result.reason === ResultReason.RecognizedSpeech,
+            debug: e.result
+          }
+          event.start = _.round(e.result.offset / 10000000, 3)
+          event.end = _.round((e.result.offset + e.result.duration) / 10000000, 3)
+          events.emit('data', event)
+        }
+      }
+      recognizer.recognizing = recognizedHandler
+      recognizer.recognized = recognizedHandler
+      recognizer.sessionStopped = (s, e) => {
+        // recognizer.stopContinuousRecognitionAsync()
+        // events.emit('close')
+      }
+      recognizer.canceled = (s, e) => {
+        console.log(e.errorDetails)
+        setTimeout(() => {
+          const event = {
+            status: 'error',
+            err: 'test'
+          }
+          events.emit('data', event)
+        }, 100)
+      }
+      recognizer.startContinuousRecognitionAsync()
+
       /* recognizer.canceled = (s, e) => {
         recognizer.stopContinuousRecognitionAsync()
         reject(new Error(`Azure STT failed: ${getAzureErrorDetails(e)}`))
