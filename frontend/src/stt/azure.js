@@ -73,6 +73,7 @@ class AzureSTT {
       // events.emit('close')
     }
     recognizer.canceled = (s, e) => {
+      console.log(e.errorDetails)
       const event = {
         status: 'error',
         err: e.errorDetails
