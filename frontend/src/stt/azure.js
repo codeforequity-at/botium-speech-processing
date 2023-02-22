@@ -72,7 +72,6 @@ class AzureSTT {
     recognizer.recognized = recognizedHandler
     recognizer.sessionStopped = (s, e) => {
       recognizer.stopContinuousRecognitionAsync()
-      // events.emit('close')
     }
     recognizer.canceled = (s, e) => {
       console.log(e.errorDetails)
