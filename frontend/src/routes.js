@@ -870,7 +870,7 @@ const wssStreams = {}
   const stream = wssStreams[req.params.streamId]
   if (stream) {
     try {
-      // stream.end()
+      stream.end()
     } catch (err) {
       return next(err)
     }
@@ -891,8 +891,8 @@ const wssUpgrade = (req, socket, head) => {
       ws.send(JSON.stringify(data))
     })
     stream.events.on('close', () => {
-      // ws.close()
-      // wss1.close()
+      ws.close()
+      wss1.close()
     })
     ws.on('message', (data) => {
       if (Buffer.isBuffer(data)) {
@@ -900,9 +900,9 @@ const wssUpgrade = (req, socket, head) => {
       }
     })
     ws.on('close', () => {
-      // delete wssStreams[streamId]
-      // stream.close()
-      // wss1.close()
+      delete wssStreams[streamId]
+      stream.close()
+      wss1.close()
     })
     stream.triggerEmit()
   })

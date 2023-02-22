@@ -70,14 +70,13 @@ class AzureSTT {
     recognizer.recognizing = recognizedHandler
     recognizer.recognized = recognizedHandler
     recognizer.sessionStopped = (s, e) => {
-      // recognizer.stopContinuousRecognitionAsync()
-      // events.emit('close')
+      recognizer.stopContinuousRecognitionAsync()
+      events.emit('close')
     }
     recognizer.canceled = (s, e) => {
-      console.log(e.errorDetails)
       const event = {
         status: 'error',
-        err: 'test'
+        err: `Azure STT failed: ${getAzureErrorDetails(e)}`
       }
       eventHistory.push(event)
     }
@@ -96,8 +95,8 @@ class AzureSTT {
         end: () => {
         },
         close: () => {
-          // recognizer.stopContinuousRecognitionAsync()
-          // pushStream.close()
+          recognizer.stopContinuousRecognitionAsync()
+          pushStream.close()
         },
         triggerEmit: () => {
           for (const eh of eventHistory) {
