@@ -904,6 +904,7 @@ const wssUpgrade = (req, socket, head) => {
       // stream.close()
       // wss1.close()
     })
+    stream.events.triggerEmit()
   })
   wss1.handleUpgrade(req, socket, head, (ws) => {
     wss1.emit('connection', ws, req)
