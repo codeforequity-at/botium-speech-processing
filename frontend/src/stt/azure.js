@@ -64,6 +64,7 @@ class AzureSTT {
         }
         event.start = _.round(e.result.offset / 10000000, 3)
         event.end = _.round((e.result.offset + e.result.duration) / 10000000, 3)
+        events.emit('data', event)
         eventHistory.push(event)
       }
     }
@@ -78,6 +79,7 @@ class AzureSTT {
         status: 'error',
         err: `Azure STT failed: ${getAzureErrorDetails(e)}`
       }
+      events.emit('data', event)
       eventHistory.push(event)
     }
     recognizer.startContinuousRecognitionAsync()
@@ -99,7 +101,7 @@ class AzureSTT {
             recognizer.stopContinuousRecognitionAsync()
             pushStream.close()
           },
-          triggerEmit: () => {
+          triggerHistoryEmit: () => {
             for (const eh of eventHistory) {
               events.emit('data', eh)
             }
