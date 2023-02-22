@@ -83,27 +83,29 @@ class AzureSTT {
     recognizer.startContinuousRecognitionAsync()
 
     return new Promise((resolve, reject) => {
-      /* recognizer.canceled = (s, e) => {
+      recognizer.canceled = (s, e) => {
         recognizer.stopContinuousRecognitionAsync()
         reject(new Error(`Azure STT failed: ${getAzureErrorDetails(e)}`))
-      } */
-      resolve({
-        events,
-        write: (buffer) => {
-          pushStream.write(buffer)
-        },
-        end: () => {
-        },
-        close: () => {
-          recognizer.stopContinuousRecognitionAsync()
-          pushStream.close()
-        },
-        triggerEmit: () => {
-          for (const eh of eventHistory) {
-            events.emit('data', eh)
+      }
+      recognizer.sessionStarted = (s, e) => {
+        resolve({
+          events,
+          write: (buffer) => {
+            pushStream.write(buffer)
+          },
+          end: () => {
+          },
+          close: () => {
+            recognizer.stopContinuousRecognitionAsync()
+            pushStream.close()
+          },
+          triggerEmit: () => {
+            for (const eh of eventHistory) {
+              events.emit('data', eh)
+            }
           }
-        }
-      })
+        })
+      }
     })
   }
 
