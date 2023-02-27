@@ -73,6 +73,7 @@ class GoogleSTT {
     const bufferStream = new PassThrough()
     bufferStream.pipe(recognizeStream)
     const events = new EventEmitter()
+    const eventHistory = []
 
     recognizeStream.on('data', (data) => {
       const alternative = data.results[0] && data.results[0].alternatives[0]
@@ -88,13 +89,16 @@ class GoogleSTT {
           event.end = _.round(_.toNumber(alternative.words[alternative.words.length - 1].endTime.seconds) + _.toNumber(alternative.words[alternative.words.length - 1].endTime.nanos) / 1000000000, 3)
         }
         events.emit('data', event)
+        eventHistory.push(event)
       }
     })
     recognizeStream.on('error', (err) => {
-      events.emit('data', {
+      const event = {
         status: 'error',
-        err: `${err.message}`
-      })
+        err: `Google STT failed: ${err.message}`
+      }
+      events.emit('data', event)
+      eventHistory.push(event)
     })
     recognizeStream.on('close', () => {
       events.emit('close')
@@ -115,6 +119,11 @@ class GoogleSTT {
           recognizeStream.destroy()
         }
         recognizeStream = null
+      },
+      triggerHistoryEmit: () => {
+        for (const eh of eventHistory) {
+          events.emit('data', eh)
+        }
       }
     }
   }

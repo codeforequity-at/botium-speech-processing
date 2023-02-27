@@ -78,6 +78,7 @@ class AwsTranscribeSTT {
     applyIfExists(request, req, 'req.body.awstranscribe.config.streaming')
 
     const events = new EventEmitter()
+    const eventHistory = []
     try {
       const cmdResponse = await transcribeClient.send(new StartStreamTranscriptionCommand(request))
       setTimeout(async () => {
@@ -96,15 +97,18 @@ class AwsTranscribeSTT {
                   debug: result
                 }
                 events.emit('data', event)
+                eventHistory.push(event)
               }
             }
           }
         } catch (err) {
           debug(`TranscriptResultStream failure: ${err.Message || err.message || err}`)
-          events.emit('data', {
+          const event = {
             status: 'error',
-            err: `${err.message || err}`
-          })
+            err: `AWS Transcribe STT failed: ${err.message || err}`
+          }
+          events.emit('data', event)
+          eventHistory.push(event)
         }
         events.emit('close')
         debug('Ready listening to TranscriptResultStream ')
@@ -128,6 +132,11 @@ class AwsTranscribeSTT {
           audioInputStream.destroy()
         }
         audioInputStream = null
+      },
+      triggerHistoryEmit: () => {
+        for (const eh of eventHistory) {
+          events.emit('data', eh)
+        }
       }
     }
   }
