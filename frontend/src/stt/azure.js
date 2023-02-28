@@ -52,7 +52,7 @@ class AzureSTT {
     const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
 
     const events = new EventEmitter()
-    const eventHistory = []
+    let eventHistory = []
 
     const recognizedHandler = (s, e) => {
       if (e.result.reason === ResultReason.RecognizedSpeech || e.result.reason === ResultReason.RecognizingSpeech) {
@@ -74,7 +74,6 @@ class AzureSTT {
       recognizer.stopContinuousRecognitionAsync()
     }
     recognizer.canceled = (s, e) => {
-      console.log(e.errorDetails)
       const event = {
         status: 'error',
         err: `Azure STT failed: ${getAzureErrorDetails(e)}`
@@ -95,6 +94,7 @@ class AzureSTT {
         close: () => {
           recognizer.stopContinuousRecognitionAsync()
           pushStream.close()
+          eventHistory = null
         },
         triggerHistoryEmit: () => {
           for (const eh of eventHistory) {

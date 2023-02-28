@@ -73,7 +73,7 @@ class GoogleSTT {
     const bufferStream = new PassThrough()
     bufferStream.pipe(recognizeStream)
     const events = new EventEmitter()
-    const eventHistory = []
+    let eventHistory = []
 
     recognizeStream.on('data', (data) => {
       const alternative = data.results[0] && data.results[0].alternatives[0]
@@ -118,6 +118,7 @@ class GoogleSTT {
         if (recognizeStream) {
           recognizeStream.destroy()
         }
+        eventHistory = null
         recognizeStream = null
       },
       triggerHistoryEmit: () => {

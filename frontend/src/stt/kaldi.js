@@ -42,7 +42,7 @@ class KaldiSTT {
 
       const ws = new WebSocket(wsUri)
       const events = new EventEmitter()
-      const eventHistory = []
+      let eventHistory = []
 
       ws.on('open', () => {
         ws.on('message', (data) => {
@@ -95,6 +95,7 @@ class KaldiSTT {
             if (ws) {
               ws.close()
             }
+            eventHistory = null
           },
           triggerHistoryEmit: () => {
             for (const eh of eventHistory) {

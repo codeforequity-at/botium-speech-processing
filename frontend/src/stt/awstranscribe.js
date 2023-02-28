@@ -78,7 +78,7 @@ class AwsTranscribeSTT {
     applyIfExists(request, req, 'req.body.awstranscribe.config.streaming')
 
     const events = new EventEmitter()
-    const eventHistory = []
+    let eventHistory = []
     try {
       const cmdResponse = await transcribeClient.send(new StartStreamTranscriptionCommand(request))
       setTimeout(async () => {
@@ -132,6 +132,7 @@ class AwsTranscribeSTT {
           audioInputStream.destroy()
         }
         audioInputStream = null
+        eventHistory = null
       },
       triggerHistoryEmit: () => {
         for (const eh of eventHistory) {

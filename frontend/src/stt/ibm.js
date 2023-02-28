@@ -42,7 +42,7 @@ class IbmSTT {
     const bufferStream = new PassThrough()
     bufferStream.pipe(recognizeStream)
     const events = new EventEmitter()
-    const eventHistory = []
+    let eventHistory = []
 
     recognizeStream.on('data', (data) => {
       for (const result of data.results || []) {
@@ -91,6 +91,7 @@ class IbmSTT {
           recognizeStream.destroy()
         }
         recognizeStream = null
+        eventHistory = null
       },
       triggerHistoryEmit: () => {
         for (const eh of eventHistory) {
