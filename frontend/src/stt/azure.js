@@ -52,10 +52,12 @@ class AzureSTT {
     const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
 
     const events = new EventEmitter()
+    let eventHistory = []
 
     const recognizedHandler = (s, e) => {
       if (e.result.reason === ResultReason.RecognizedSpeech || e.result.reason === ResultReason.RecognizingSpeech) {
         const event = {
+          status: 'ok',
           text: e.result.text,
           final: e.result.reason === ResultReason.RecognizedSpeech,
           debug: e.result
@@ -63,35 +65,43 @@ class AzureSTT {
         event.start = _.round(e.result.offset / 10000000, 3)
         event.end = _.round((e.result.offset + e.result.duration) / 10000000, 3)
         events.emit('data', event)
+        eventHistory.push(event)
       }
     }
     recognizer.recognizing = recognizedHandler
     recognizer.recognized = recognizedHandler
     recognizer.sessionStopped = (s, e) => {
       recognizer.stopContinuousRecognitionAsync()
-      events.emit('close')
+    }
+    recognizer.canceled = (s, e) => {
+      const event = {
+        status: 'error',
+        err: `Azure STT failed: ${getAzureErrorDetails(e)}`
+      }
+      events.emit('data', event)
+      eventHistory.push(event)
     }
     recognizer.startContinuousRecognitionAsync()
 
     return new Promise((resolve, reject) => {
-      recognizer.canceled = (s, e) => {
-        recognizer.stopContinuousRecognitionAsync()
-        reject(new Error(`Azure STT failed: ${getAzureErrorDetails(e)}`))
-      }
-      recognizer.sessionStarted = (s, e) => {
-        resolve({
-          events,
-          write: (buffer) => {
-            pushStream.write(buffer)
-          },
-          end: () => {
-          },
-          close: () => {
-            recognizer.stopContinuousRecognitionAsync()
-            pushStream.close()
+      resolve({
+        events,
+        write: (buffer) => {
+          pushStream.write(buffer)
+        },
+        end: () => {
+        },
+        close: () => {
+          recognizer.stopContinuousRecognitionAsync()
+          pushStream.close()
+          eventHistory = null
+        },
+        triggerHistoryEmit: () => {
+          for (const eh of eventHistory) {
+            events.emit('data', eh)
           }
-        })
-      }
+        }
+      })
     })
   }
 

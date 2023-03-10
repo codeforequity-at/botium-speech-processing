@@ -42,6 +42,7 @@ class KaldiSTT {
 
       const ws = new WebSocket(wsUri)
       const events = new EventEmitter()
+      let eventHistory = []
 
       ws.on('open', () => {
         ws.on('message', (data) => {
@@ -50,6 +51,7 @@ class KaldiSTT {
             const hypotheses = dj.result && dj.result.hypotheses && dj.result.hypotheses[0]
             if (hypotheses && hypotheses.transcript) {
               const event = {
+                status: 'ok',
                 text: hypotheses.transcript,
                 final: !!dj.result.final,
                 debug: dj
@@ -59,15 +61,19 @@ class KaldiSTT {
                 event.end = _.round(_.toNumber(dj['total-length']), 3)
               }
               events.emit('data', event)
+              eventHistory.push(event)
             }
           } catch (err) {
             debug(`received non JSON content on stream, ignoring. ${err.message}`)
           }
         })
         ws.on('error', (err) => {
-          events.emit('data', {
-            err: `${err.message}`
-          })
+          const event = {
+            status: 'error',
+            err: `Kaldi STT failed: ${err.message}`
+          }
+          events.emit('data', event)
+          eventHistory.push(event)
         })
         ws.on('close', () => {
           events.emit('close')
@@ -88,6 +94,12 @@ class KaldiSTT {
           close: () => {
             if (ws) {
               ws.close()
+            }
+            eventHistory = null
+          },
+          triggerHistoryEmit: () => {
+            for (const eh of eventHistory) {
+              events.emit('data', eh)
             }
           }
         })

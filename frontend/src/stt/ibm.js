@@ -42,12 +42,14 @@ class IbmSTT {
     const bufferStream = new PassThrough()
     bufferStream.pipe(recognizeStream)
     const events = new EventEmitter()
+    let eventHistory = []
 
     recognizeStream.on('data', (data) => {
       for (const result of data.results || []) {
         const transcription = result.alternatives[0] ? result.alternatives[0].transcript : null
         if (transcription) {
           const event = {
+            status: 'ok',
             text: transcription,
             final: !!result.final,
             debug: result
@@ -57,13 +59,17 @@ class IbmSTT {
             event.end = _.round(result.alternatives[result.alternatives.length - 1].timestamps[0][2], 3)
           }
           events.emit('data', event)
+          eventHistory.push(event)
         }
       }
     })
     recognizeStream.on('error', (err) => {
-      events.emit('data', {
-        err: `${err.message}`
-      })
+      const event = {
+        status: 'error',
+        err: `IBM STT failed: ${err.message}`
+      }
+      events.emit('data', event)
+      eventHistory.push(event)
     })
     recognizeStream.on('close', () => {
       events.emit('close')
@@ -85,6 +91,12 @@ class IbmSTT {
           recognizeStream.destroy()
         }
         recognizeStream = null
+        eventHistory = null
+      },
+      triggerHistoryEmit: () => {
+        for (const eh of eventHistory) {
+          events.emit('data', eh)
+        }
       }
     }
   }
