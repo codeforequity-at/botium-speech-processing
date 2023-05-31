@@ -1,0 +1,18 @@
+version: '3'
+services:
+  frontend:
+    image: botium/botium-speech-frontend:develop
+    restart: always
+    user: 1000:1000
+    ports:
+    - 80:56000
+    environment:
+      BOTIUM_API_TOKENS:
+      BOTIUM_SPEECH_PROVIDER_TTS: marytts
+      BOTIUM_SPEECH_PROVIDER_STT: kaldi
+      BOTIUM_SPEECH_GOOGLE_CLIENT_EMAIL:
+      BOTIUM_SPEECH_GOOGLE_PRIVATE_KEY:
+    volumes:
+      - "./frontend/resources:/app/resources"
+volumes:
+  logs:
