@@ -19,6 +19,8 @@ docker_publish_develop:
 
 docker_build_release:
 	docker build -t botium/botium-speech-frontend:$(VERSION) frontend
+	
+docker_build_release_legacy:
 	docker build -t botium/botium-speech-watcher:$(VERSION) watcher
 	docker build -f stt/Dockerfile.kaldi.en -t botium/botium-speech-kaldi-en:$(VERSION) stt
 	docker build -f stt/Dockerfile.kaldi.de -t botium/botium-speech-kaldi-de:$(VERSION) stt
@@ -27,6 +29,8 @@ docker_build_release:
 
 docker_publish_release:
 	docker push botium/botium-speech-frontend:$(VERSION)
+	
+docker_publish_release_legacy:
 	docker push botium/botium-speech-watcher:$(VERSION)
 	docker push botium/botium-speech-kaldi-en:$(VERSION)
 	docker push botium/botium-speech-kaldi-de:$(VERSION)
