@@ -39,13 +39,13 @@ const ttsEngines = {
   google: new (require('./tts/google'))(),
   ibm: new (require('./tts/ibm'))(),
   azure: new (require('./tts/azure'))(),
-  polly: new (require('./tts/polly'))(),
-  marytts: new (require('./tts/marytts'))(),
-  picotts: new (require('./tts/picotts'))()
+  polly: new (require('./tts/polly'))()
+  // marytts: new (require('./tts/marytts'))(),
+  // picotts: new (require('./tts/picotts'))()
 }
 const sttEngines = {
   google: new (require('./stt/google'))(),
-  kaldi: new (require('./stt/kaldi'))(),
+  // kaldi: new (require('./stt/kaldi'))(),
   ibm: new (require('./stt/ibm'))(),
   azure: new (require('./stt/azure'))(),
   awstranscribe: new (require('./stt/awstranscribe'))()
@@ -144,7 +144,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm, azure, awstranscribe]
+ *           enum: [google, ibm, azure, awstranscribe]
  *     responses:
  *       200:
  *         description: List of supported STT languages
@@ -196,7 +196,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm, azure, awstranscribe]
+ *           enum: [google, ibm, azure, awstranscribe]
  *       - name: cache
  *         description: Use result cache (default Y)
  *         in: query
@@ -299,7 +299,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, polly, marytts, picotts]
+ *           enum: [google, ibm, azure, polly]
  *     responses:
  *       200:
  *         description: List of supported voices
@@ -340,7 +340,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, polly, marytts, picotts]
+ *           enum: [google, ibm, azure, polly]
  *     responses:
  *       200:
  *         description: List of supported TTS languages
@@ -352,6 +352,9 @@ router.post('/api/stt/:language', async (req, res, next) => {
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttslanguages', async (req, res, next) => {
   try {
     const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+    if (_.isNil(tts)) {
+      res.json([])
+    }
     res.json(await tts.languages(req))
   } catch (err) {
     return next(err)
@@ -392,7 +395,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, polly, marytts, picotts]
+ *           enum: [google, ibm, azure, polly]
  *       - name: cache
  *         description: Use result cache (default Y)
  *         in: query
@@ -780,7 +783,7 @@ const wssStreams = {}
  *         required: false
  *         schema:
  *           type: string
- *           enum: [kaldi, google, ibm, azure, awstranscribe]
+ *           enum: [google, ibm, azure, awstranscribe]
  *     responses:
  *       200:
  *         description: Websocket Url to stream the audio to, and the uri to check status and end the stream
