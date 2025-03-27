@@ -40,7 +40,7 @@
     "request": "^2.88.2",
     "request-promise-native": "^1.0.9",
     "sanitize-filename": "^1.6.3",
-    "swagger-jsdoc": "^6.1.0",
+    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.3.0",
     "uuid": "^8.3.2",
     "winston": "^3.6.0",

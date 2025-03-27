@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y dos2unix sox libsox-fmt-mp3 libttspico-
 
 WORKDIR /app
 COPY ./package.json /app/package.json
-RUN npm install --no-optional --production
+RUN npm install --no-optional --production --legacy-peer-deps
 COPY . /app
 COPY ./resources/.env /app/.env
 RUN find . -type f ! -path '*/node_modules/*' -print0 | xargs -0 dos2unix
