@@ -1,61 +1,37 @@
 TAG_COMMIT := $(shell git rev-list --abbrev-commit --tags --max-count=1)
 VERSION := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || true)
 
-docker_build_develop:
-	docker build -t botium/botium-speech-frontend:develop frontend
-	#docker build -t botium/botium-speech-watcher:develop watcher
-	#docker build -f stt/Dockerfile.kaldi.en -t botium/botium-speech-kaldi-en:develop stt
-	#docker build -f stt/Dockerfile.kaldi.de -t botium/botium-speech-kaldi-de:develop stt
-	#docker build -f tts/Dockerfile.marytts -t botium/botium-speech-marytts:develop tts
-	#docker build -t botium/botium-speech-dictate:develop dictate
+docker_build_dev:
+	docker build -t botium/speech:develop frontend
 
-docker_publish_develop:
-	docker push botium/botium-speech-frontend:develop
-	#docker push botium/botium-speech-watcher:develop
-	#docker push botium/botium-speech-kaldi-en:develop
-	#docker push botium/botium-speech-kaldi-de:develop
-	#docker push botium/botium-speech-marytts:develop
-	#docker push botium/botium-speech-dictate:develop
+docker_login_dev:
+	AWS_ACCESS_KEY_ID=${BOTIUM_DEV_AWS_ACCESS_KEY_ID} \
+	AWS_SECRET_ACCESS_KEY=${BOTIUM_DEV_AWS_SECRET_ACCESS_KEY} \
+	aws ecr get-login-password --region ${BOTIUM_DEV_AWS_REGISTRY_REGION} | \
+	docker login --username AWS --password-stdin ${BOTIUM_DEV_AWS_REGISTRY_ID}.dkr.ecr.${BOTIUM_DEV_AWS_REGISTRY_REGION}.amazonaws.com
 
-docker_build_release:
-	docker build -t botium/botium-speech-frontend:$(VERSION) frontend
-	
-docker_build_release_legacy:
-	docker build -t botium/botium-speech-watcher:$(VERSION) watcher
-	docker build -f stt/Dockerfile.kaldi.en -t botium/botium-speech-kaldi-en:$(VERSION) stt
-	docker build -f stt/Dockerfile.kaldi.de -t botium/botium-speech-kaldi-de:$(VERSION) stt
-	docker build -f tts/Dockerfile.marytts -t botium/botium-speech-marytts:$(VERSION) tts
-	docker build -t botium/botium-speech-dictate:$(VERSION) dictate
+docker_publish_dev: docker_login_dev
+	docker tag botium/speech:develop ${BOTIUM_DEV_AWS_REGISTRY_HOSTNAME}/botium/speech:develop
+	docker push ${BOTIUM_DEV_AWS_REGISTRY_HOSTNAME}/botium/speech:develop
 
-docker_publish_release:
-	docker push botium/botium-speech-frontend:$(VERSION)
-	
-docker_publish_release_legacy:
-	docker push botium/botium-speech-watcher:$(VERSION)
-	docker push botium/botium-speech-kaldi-en:$(VERSION)
-	docker push botium/botium-speech-kaldi-de:$(VERSION)
-	docker push botium/botium-speech-marytts:$(VERSION)
-	docker push botium/botium-speech-dictate:$(VERSION)
+docker_build:
+	docker build -t botium/speech:$(VERSION) frontend
 
-docker_latest_release:
-	docker tag botium/botium-speech-frontend:$(VERSION) botium/botium-speech-frontend:latest
-	docker push botium/botium-speech-frontend:latest
+docker_login:
+	AWS_ACCESS_KEY_ID=${BOTIUM_AWS_ACCESS_KEY_ID} \
+	AWS_SECRET_ACCESS_KEY=${BOTIUM_AWS_SECRET_ACCESS_KEY} \
+	aws ecr get-login-password --region ${BOTIUM_AWS_REGISTRY_REGION} | \
+	docker login --username AWS --password-stdin ${BOTIUM_AWS_REGISTRY_ID}.dkr.ecr.${BOTIUM_AWS_REGISTRY_REGION}.amazonaws.com
 
-	docker tag botium/botium-speech-watcher:$(VERSION) botium/botium-speech-watcher:latest
-	docker push botium/botium-speech-watcher:latest
+docker_publish: docker_login
+	docker tag botium/speech:$(VERSION) ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:$(VERSION)
+	docker push ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:$(VERSION)
 
-	docker tag botium/botium-speech-kaldi-en:$(VERSION) botium/botium-speech-kaldi-en:latest
-	docker push botium/botium-speech-kaldi-en:latest
+docker_latest: docker_login
+	docker tag botium/speech:$(VERSION) ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:latest
+	docker push ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:latest
 
-	docker tag botium/botium-speech-kaldi-de:$(VERSION) botium/botium-speech-kaldi-de:latest
-	docker push botium/botium-speech-kaldi-de:latest
 
-	docker tag botium/botium-speech-marytts:$(VERSION) botium/botium-speech-marytts:latest
-	docker push botium/botium-speech-marytts:latest
+develop: docker_build_dev docker_publish_dev
 
-	docker tag botium/botium-speech-dictate:$(VERSION) botium/botium-speech-dictate:latest
-	docker push botium/botium-speech-dictate:latest
-
-develop: docker_build_develop docker_publish_develop
-
-release: docker_build_release docker_publish_release docker_latest_release
+release: docker_build docker_publish docker_latest
