@@ -27,11 +27,6 @@ docker_publish: docker_login
 	docker tag botium/speech:$(VERSION) ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:$(VERSION)
 	docker push ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:$(VERSION)
 
-docker_latest: docker_login
-	docker tag botium/speech:$(VERSION) ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:latest
-	docker push ${BOTIUM_AWS_REGISTRY_HOSTNAME}/botium/speech:latest
-
-
 develop: docker_build_dev docker_publish_dev
 
-release: docker_build docker_publish docker_latest
+release: docker_build docker_publish

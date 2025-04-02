@@ -1,11 +1,11 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
-RUN apt-get update && apt-get -y install curl gnupg bc && curl -sL https://deb.nodesource.com/setup_14.x  | bash - && apt-get -y install nodejs
+RUN apt-get update && apt-get -y install curl gnupg bc && curl -sL https://deb.nodesource.com/setup_18.x  | bash - && apt-get -y install nodejs
 RUN apt-get update && apt-get install -y dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg
 
 WORKDIR /app
 COPY ./package.json /app/package.json
-RUN npm install --no-optional --production --legacy-peer-deps
+RUN npm install --omit=optional --omit=dev --legacy-peer-deps
 COPY . /app
 COPY ./resources/.env /app/.env
 RUN find . -type f ! -path '*/node_modules/*' -print0 | xargs -0 dos2unix
