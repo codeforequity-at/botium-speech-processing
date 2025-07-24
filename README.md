@@ -57,6 +57,10 @@ For the major cloud providers there are additional docker-compose files. If usin
 
     > docker-compose -f docker-compose-azure.yml up -d
 
+For Deepgram, add your API key to the file *docker-compose-deepgram.yml* and start the services:
+
+    > docker-compose -f docker-compose-deepgram.yml up -d
+
 ### Optional: Build Docker Images
 
 You can optionally built your own docker images (if you made any changes in this repository, for instance to download the latest version of a model). Clone or download this repository and run docker-compose:

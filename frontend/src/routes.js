@@ -39,7 +39,8 @@ const ttsEngines = {
   google: new (require('./tts/google'))(),
   ibm: new (require('./tts/ibm'))(),
   azure: new (require('./tts/azure'))(),
-  polly: new (require('./tts/polly'))()
+  polly: new (require('./tts/polly'))(),
+  deepgram: new (require('./tts/deepgram'))()
   // marytts: new (require('./tts/marytts'))(),
   // picotts: new (require('./tts/picotts'))()
 }
@@ -48,7 +49,8 @@ const sttEngines = {
   // kaldi: new (require('./stt/kaldi'))(),
   ibm: new (require('./stt/ibm'))(),
   azure: new (require('./stt/azure'))(),
-  awstranscribe: new (require('./stt/awstranscribe'))()
+  awstranscribe: new (require('./stt/awstranscribe'))(),
+  deepgram: new (require('./stt/deepgram'))()
 }
 
 const multerMemoryStorage = multer.memoryStorage()
@@ -144,7 +146,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, awstranscribe]
+ *           enum: [google, ibm, azure, awstranscribe, deepgram]
  *     responses:
  *       200:
  *         description: List of supported STT languages
@@ -196,7 +198,7 @@ const router = express.Router()
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, awstranscribe]
+ *           enum: [google, ibm, azure, awstranscribe, deepgram]
  *       - name: cache
  *         description: Use result cache (default Y)
  *         in: query
@@ -299,7 +301,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, polly]
+ *           enum: [google, ibm, azure, polly, deepgram]
  *     responses:
  *       200:
  *         description: List of supported voices
@@ -340,7 +342,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, polly]
+ *           enum: [google, ibm, azure, polly, deepgram]
  *     responses:
  *       200:
  *         description: List of supported TTS languages
@@ -395,7 +397,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, polly]
+ *           enum: [google, ibm, azure, polly, deepgram]
  *       - name: cache
  *         description: Use result cache (default Y)
  *         in: query
@@ -783,7 +785,7 @@ const wssStreams = {}
  *         required: false
  *         schema:
  *           type: string
- *           enum: [google, ibm, azure, awstranscribe]
+ *           enum: [google, ibm, azure, awstranscribe, deepgram]
  *     responses:
  *       200:
  *         description: Websocket Url to stream the audio to, and the uri to check status and end the stream
