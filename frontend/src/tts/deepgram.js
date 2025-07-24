@@ -1,6 +1,8 @@
 const _ = require('lodash')
 const { createClient } = require('@deepgram/sdk')
 const axios = require('axios')
+const WebSocket = require('ws')
+const { EventEmitter } = require('events')
 const debug = require('debug')('botium-speech-processing-deepgram-tts')
 
 const { deepgramOptions, ttsFilename } = require('../utils')
@@ -154,6 +156,217 @@ class DeepgramTTS {
     } catch (err) {
       debug(err)
       throw new Error(`Deepgram TTS failed: ${err.message || err}`)
+    }
+  }
+
+  async tts_OpenStream (req, { language, voice }) {
+    const options = deepgramOptions(req)
+    if (!options.apiKey) {
+      throw new Error('Deepgram API key not configured')
+    }
+
+    const events = new EventEmitter()
+    const history = []
+    let isStreamClosed = false
+    let ws = null
+
+    const speakOptions = {
+      model: voice || 'aura-2-asteria-en',
+      encoding: 'linear16',
+      sample_rate: 16000
+    }
+
+    // Apply default config from environment
+    if (process.env.BOTIUM_SPEECH_DEEPGRAM_TTS_CONFIG) {
+      try {
+        const defaultConfig = JSON.parse(process.env.BOTIUM_SPEECH_DEEPGRAM_TTS_CONFIG)
+        Object.assign(speakOptions, defaultConfig)
+      } catch (err) {
+        throw new Error(`Deepgram TTS config in BOTIUM_SPEECH_DEEPGRAM_TTS_CONFIG invalid: ${err.message}`)
+      }
+    }
+
+    // Apply request-specific config  
+    if (req.body && req.body.deepgram && req.body.deepgram.config) {
+      Object.assign(speakOptions, req.body.deepgram.config)
+    }
+
+    const triggerHistoryEmit = () => {
+      history.forEach(data => events.emit('data', data))
+    }
+
+    const write = (textChunk) => {
+      if (isStreamClosed || !ws) return
+      
+      debug(`Sending text chunk to Deepgram: ${textChunk}`)
+      
+      try {
+        ws.send(JSON.stringify({
+          type: 'Speak',
+          text: textChunk
+        }))
+      } catch (err) {
+        debug(`Error sending text chunk: ${err.message}`)
+        const errorData = {
+          status: 'error',
+          text: '',
+          final: true,
+          err: err.message
+        }
+        history.push(errorData)
+        events.emit('data', errorData)
+      }
+    }
+
+    const end = () => {
+      if (isStreamClosed || !ws) return
+      
+      debug('Closing Deepgram TTS stream')
+      try {
+        // Send flush to ensure all audio is processed
+        ws.send(JSON.stringify({ type: 'Flush' }))
+        
+        // Close the WebSocket connection
+        setTimeout(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.close()
+          }
+        }, 100)
+      } catch (err) {
+        debug(`Error closing stream: ${err.message}`)
+      }
+    }
+
+    const close = () => {
+      if (isStreamClosed) return
+      
+      isStreamClosed = true
+      debug('Force closing Deepgram TTS stream')
+      
+      if (ws) {
+        try {
+          ws.terminate()
+        } catch (err) {
+          debug(`Error terminating WebSocket: ${err.message}`)
+        }
+        ws = null
+      }
+      
+      events.emit('close')
+    }
+
+    // Build WebSocket URL with authentication and options
+    const wsUrl = new URL('wss://api.deepgram.com/v1/speak')
+    wsUrl.searchParams.append('model', speakOptions.model)
+    wsUrl.searchParams.append('encoding', speakOptions.encoding)
+    wsUrl.searchParams.append('sample_rate', speakOptions.sample_rate.toString())
+    
+    // Add other speak options as query parameters
+    Object.keys(speakOptions).forEach(key => {
+      if (!['model', 'encoding', 'sample_rate'].includes(key)) {
+        wsUrl.searchParams.append(key, speakOptions[key].toString())
+      }
+    })
+
+    debug(`Connecting to Deepgram TTS WebSocket: ${wsUrl.toString().replace(options.apiKey, '[API_KEY]')}`)
+
+    // Create WebSocket connection
+    ws = new WebSocket(wsUrl.toString(), {
+      headers: {
+        'Authorization': `Token ${options.apiKey}`
+      }
+    })
+
+    ws.on('open', () => {
+      debug('Deepgram TTS WebSocket connected')
+      
+      const openData = {
+        status: 'ok',
+        text: '',
+        final: false,
+        debug: { message: 'Stream opened' }
+      }
+      history.push(openData)
+      events.emit('data', openData)
+    })
+
+    ws.on('message', (data) => {
+      try {
+        // Check if message is binary audio data
+        if (Buffer.isBuffer(data)) {
+          debug(`Received audio data: ${data.length} bytes`)
+          
+          const audioData = {
+            status: 'ok',
+            buffer: data,
+            final: false,
+            debug: { audioLength: data.length }
+          }
+          history.push(audioData)
+          events.emit('data', audioData)
+        } else {
+          // Parse JSON metadata messages
+          const message = JSON.parse(data.toString())
+          debug(`Received metadata: ${JSON.stringify(message)}`)
+          
+          const metaData = {
+            status: 'ok',
+            text: '',
+            final: false,
+            debug: message
+          }
+          history.push(metaData)
+          events.emit('data', metaData)
+        }
+      } catch (err) {
+        debug(`Error processing message: ${err.message}`)
+        
+        const errorData = {
+          status: 'error',
+          text: '',
+          final: true,
+          err: err.message
+        }
+        history.push(errorData)
+        events.emit('data', errorData)
+      }
+    })
+
+    ws.on('error', (err) => {
+      debug(`Deepgram TTS WebSocket error: ${err.message}`)
+      
+      const errorData = {
+        status: 'error',
+        text: '',
+        final: true,
+        err: err.message
+      }
+      history.push(errorData)
+      events.emit('data', errorData)
+    })
+
+    ws.on('close', (code, reason) => {
+      debug(`Deepgram TTS WebSocket closed: ${code} ${reason}`)
+      
+      const closeData = {
+        status: 'ok',
+        text: '',
+        final: true,
+        debug: { closeCode: code, closeReason: reason.toString() }
+      }
+      history.push(closeData)
+      events.emit('data', closeData)
+      
+      close()
+    })
+
+    // Return stream interface compatible with routes.js
+    return {
+      events,
+      write,
+      end,
+      close,
+      triggerHistoryEmit
     }
   }
 }
