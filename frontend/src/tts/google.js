@@ -5,6 +5,32 @@ const debug = require('debug')('botium-speech-processing-google-tts')
 
 const { googleOptions, ttsFilename } = require('../utils')
 
+// Create WAV header for PCM data
+const createWavHeader = (pcmLength, sampleRate = 16000, channels = 1, bitsPerSample = 16) => {
+  const header = Buffer.alloc(44)
+  const bytesPerSample = bitsPerSample / 8
+  const byteRate = sampleRate * channels * bytesPerSample
+  const blockAlign = channels * bytesPerSample
+  const dataSize = pcmLength
+  const fileSize = 36 + dataSize
+
+  header.write('RIFF', 0)                    // ChunkID
+  header.writeUInt32LE(fileSize, 4)          // ChunkSize
+  header.write('WAVE', 8)                    // Format
+  header.write('fmt ', 12)                   // Subchunk1ID
+  header.writeUInt32LE(16, 16)               // Subchunk1Size (PCM)
+  header.writeUInt16LE(1, 20)                // AudioFormat (PCM)
+  header.writeUInt16LE(channels, 22)         // NumChannels
+  header.writeUInt32LE(sampleRate, 24)       // SampleRate
+  header.writeUInt32LE(byteRate, 28)         // ByteRate
+  header.writeUInt16LE(blockAlign, 32)       // BlockAlign
+  header.writeUInt16LE(bitsPerSample, 34)    // BitsPerSample
+  header.write('data', 36)                   // Subchunk2ID
+  header.writeUInt32LE(dataSize, 40)         // Subchunk2Size
+
+  return header
+}
+
 const genderMap = {
   MALE: 'male',
   FEMALE: 'female',
@@ -81,6 +107,8 @@ class GoogleTTS {
     const history = []
     let isStreamClosed = false
     let streamCall = null
+    let totalPcmLength = 0 // Track total PCM length for WAV header
+    let headerSent = false // Track if WAV header was sent
 
     const audioConfig = { 
       audioEncoding: 'LINEAR16', 
@@ -162,18 +190,41 @@ class GoogleTTS {
       // Create bidirectional streaming call
       streamCall = client.streamingSynthesize()
       
-      streamCall.on('data', (response) => {
+      streamCall.on('data', async (response) => {
         debug(`Received audio response: ${response.audioContent ? response.audioContent.length : 0} bytes`)
         
         if (response.audioContent && response.audioContent.length > 0) {
-          const audioData = {
+          // Send WAV header once at the beginning
+          if (!headerSent) {
+            const placeholderSize = 0xFFFFFFFF - 44 // Max size minus header
+            const wavHeader = createWavHeader(placeholderSize)
+            
+            const headerData = {
+              status: 'ok',
+              buffer: wavHeader,
+              final: false,
+              debug: { message: 'WAV header', audioLength: wavHeader.length }
+            }
+            history.push(headerData)
+            events.emit('data', headerData)
+            headerSent = true
+            debug('Sent WAV header (44 bytes)')
+          }
+          
+          // Send raw PCM data
+          totalPcmLength += response.audioContent.length
+          const pcmData = {
             status: 'ok',
             buffer: response.audioContent,
             final: false,
-            debug: { audioLength: response.audioContent.length }
+            debug: { 
+              message: 'PCM chunk',
+              audioLength: response.audioContent.length,
+              totalPcmSoFar: totalPcmLength
+            }
           }
-          history.push(audioData)
-          events.emit('data', audioData)
+          history.push(pcmData)
+          events.emit('data', pcmData)
         }
         
         // Handle other response fields if present

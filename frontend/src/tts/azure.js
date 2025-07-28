@@ -6,6 +6,40 @@ const debug = require('debug')('botium-speech-processing-azure-tts')
 
 const { azureSpeechConfig, applyExtraAzureSpeechConfig, getAzureErrorDetails, ttsFilename } = require('../utils')
 
+// Create WAV header for PCM data
+const createWavHeader = (pcmLength, sampleRate = 16000, channels = 1, bitsPerSample = 16) => {
+  const header = Buffer.alloc(44)
+  const bytesPerSample = bitsPerSample / 8
+  const byteRate = sampleRate * channels * bytesPerSample
+  const blockAlign = channels * bytesPerSample
+  const dataSize = pcmLength
+  const fileSize = 36 + dataSize
+
+  header.write('RIFF', 0)                    // ChunkID
+  header.writeUInt32LE(fileSize, 4)          // ChunkSize
+  header.write('WAVE', 8)                    // Format
+  header.write('fmt ', 12)                   // Subchunk1ID
+  header.writeUInt32LE(16, 16)               // Subchunk1Size (PCM)
+  header.writeUInt16LE(1, 20)                // AudioFormat (PCM)
+  header.writeUInt16LE(channels, 22)         // NumChannels
+  header.writeUInt32LE(sampleRate, 24)       // SampleRate
+  header.writeUInt32LE(byteRate, 28)         // ByteRate
+  header.writeUInt16LE(blockAlign, 32)       // BlockAlign
+  header.writeUInt16LE(bitsPerSample, 34)    // BitsPerSample
+  header.write('data', 36)                   // Subchunk2ID
+  header.writeUInt32LE(dataSize, 40)         // Subchunk2Size
+
+  return header
+}
+
+// Extract PCM data from WAV buffer (skip 44-byte header)
+const extractPcmFromWav = (wavBuffer) => {
+  if (wavBuffer.length > 44 && wavBuffer.toString('ascii', 0, 4) === 'RIFF') {
+    return wavBuffer.slice(44) // Skip WAV header
+  }
+  return wavBuffer // Already PCM or unknown format
+}
+
 const genderMap = {
   Male: 'male',
   Female: 'female'
@@ -84,6 +118,8 @@ class AzureTTS {
     let isStreamClosed = false
     let synthesizer = null
     let textBuffer = ''
+    let totalPcmLength = 0 // Track total PCM length for WAV header
+    let headerSent = false // Track if WAV header was sent
 
     const triggerHistoryEmit = () => {
       history.forEach(data => events.emit('data', data))
@@ -130,17 +166,44 @@ class AzureTTS {
             debug(`Azure TTS result for sentence: ${text.substring(0, 50)}...`)
             
             if (result.reason === ResultReason.SynthesizingAudioCompleted) {
-              const audioData = {
+              // Extract PCM from WAV
+              const wavBuffer = Buffer.from(result.audioData)
+              const pcmData = extractPcmFromWav(wavBuffer)
+              
+              debug(`Received PCM chunk: ${pcmData.length} bytes (from WAV: ${wavBuffer.length} bytes)`)
+              
+              // Send WAV header once at the beginning
+              if (!headerSent) {
+                const placeholderSize = 0xFFFFFFFF - 44 // Max size minus header
+                const wavHeader = createWavHeader(placeholderSize)
+                
+                const headerData = {
+                  status: 'ok',
+                  buffer: wavHeader,
+                  final: false,
+                  debug: { message: 'WAV header', audioLength: wavHeader.length }
+                }
+                history.push(headerData)
+                events.emit('data', headerData)
+                headerSent = true
+                debug('Sent WAV header (44 bytes)')
+              }
+              
+              // Send raw PCM data
+              totalPcmLength += pcmData.length
+              const pcmChunkData = {
                 status: 'ok',
-                buffer: Buffer.from(result.audioData),
+                buffer: pcmData,
                 final: false,
                 debug: { 
-                  audioLength: result.audioData.byteLength,
+                  message: 'PCM chunk',
+                  audioLength: pcmData.length,
+                  totalPcmSoFar: totalPcmLength,
                   sentence: text.substring(0, 100) + (text.length > 100 ? '...' : '')
                 }
               }
-              history.push(audioData)
-              events.emit('data', audioData)
+              history.push(pcmChunkData)
+              events.emit('data', pcmChunkData)
             } else if (result.reason === ResultReason.Canceled) {
               const errorData = {
                 status: 'error',
@@ -192,17 +255,18 @@ class AzureTTS {
       
       // Signal end of stream
       setTimeout(() => {
-        if (!isStreamClosed) {
-          const endData = {
-            status: 'ok',
-            text: '',
-            final: true,
-            debug: { message: 'Stream ended' }
+        const endData = {
+          status: 'ok',
+          text: '',
+          final: true,
+          debug: { 
+            message: 'Stream ended',
+            totalPcmLength: totalPcmLength
           }
-          history.push(endData)
-          events.emit('data', endData)
-          close()
         }
+        history.push(endData)
+        events.emit('data', endData)
+        close()
       }, 500) // Give time for final synthesis to complete
     }
 
@@ -232,26 +296,28 @@ class AzureTTS {
       // Setup synthesizer event handlers for streaming
       synthesizer.synthesisStarted = (sender, event) => {
         debug('Azure TTS synthesis started')
-        const startData = {
-          status: 'ok',
-          text: '',
-          final: false,
-          debug: { message: 'Synthesis started', sessionId: event.sessionId }
-        }
-        history.push(startData)
-        events.emit('data', startData)
+        // Only log, don't send metadata
       }
 
       synthesizer.synthesizing = (sender, event) => {
         debug(`Azure TTS synthesizing: ${event.result.audioData.byteLength} bytes`)
         
         if (event.result.audioData.byteLength > 0) {
+          // Extract PCM from WAV chunk and add proper header
+          const wavBuffer = Buffer.from(event.result.audioData)
+          const pcmData = extractPcmFromWav(wavBuffer)
+          const newWavHeader = createWavHeader(pcmData.length)
+          const finalWavChunk = Buffer.concat([newWavHeader, pcmData])
+          
+          debug(`Synthesizing chunk: WAV ${wavBuffer.length} -> PCM ${pcmData.length} -> WAV ${finalWavChunk.length}`)
+          
           const audioData = {
             status: 'ok',
-            buffer: Buffer.from(event.result.audioData),
+            buffer: finalWavChunk,
             final: false,
             debug: { 
-              audioLength: event.result.audioData.byteLength,
+              audioLength: finalWavChunk.length,
+              pcmLength: pcmData.length,
               partial: true
             }
           }
@@ -262,31 +328,12 @@ class AzureTTS {
 
       synthesizer.synthesisCompleted = (sender, event) => {
         debug('Azure TTS synthesis completed for chunk')
-        
-        const completeData = {
-          status: 'ok',
-          text: '',
-          final: false,
-          debug: { 
-            message: 'Chunk synthesis completed',
-            resultId: event.result.resultId
-          }
-        }
-        history.push(completeData)
-        events.emit('data', completeData)
+        // Only log, don't send metadata
       }
 
       synthesizer.SynthesisCanceled = (sender, event) => {
         debug(`Azure TTS synthesis canceled: ${event.reason}`)
-        
-        const cancelData = {
-          status: 'error',
-          text: '',
-          final: true,
-          err: `Synthesis canceled: ${event.reason}`
-        }
-        history.push(cancelData)
-        events.emit('data', cancelData)
+        // Only log errors, don't send metadata
       }
 
       const openData = {
