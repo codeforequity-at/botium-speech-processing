@@ -1,9 +1,37 @@
 const _ = require('lodash')
 const { createClient } = require('@deepgram/sdk')
 const axios = require('axios')
+const WebSocket = require('ws')
+const { EventEmitter } = require('events')
 const debug = require('debug')('botium-speech-processing-deepgram-tts')
 
 const { deepgramOptions, ttsFilename } = require('../utils')
+
+// Create WAV header for PCM data
+const createWavHeader = (pcmLength, sampleRate = 16000, channels = 1, bitsPerSample = 16) => {
+  const header = Buffer.alloc(44)
+  const bytesPerSample = bitsPerSample / 8
+  const byteRate = sampleRate * channels * bytesPerSample
+  const blockAlign = channels * bytesPerSample
+  const dataSize = pcmLength
+  const fileSize = 36 + dataSize
+
+  header.write('RIFF', 0)                    // ChunkID
+  header.writeUInt32LE(fileSize, 4)          // ChunkSize
+  header.write('WAVE', 8)                    // Format
+  header.write('fmt ', 12)                   // Subchunk1ID
+  header.writeUInt32LE(16, 16)               // Subchunk1Size (PCM)
+  header.writeUInt16LE(1, 20)                // AudioFormat (PCM)
+  header.writeUInt16LE(channels, 22)         // NumChannels
+  header.writeUInt32LE(sampleRate, 24)       // SampleRate
+  header.writeUInt32LE(byteRate, 28)         // ByteRate
+  header.writeUInt16LE(blockAlign, 32)       // BlockAlign
+  header.writeUInt16LE(bitsPerSample, 34)    // BitsPerSample
+  header.write('data', 36)                   // Subchunk2ID
+  header.writeUInt32LE(dataSize, 40)         // Subchunk2Size
+
+  return header
+}
 
 class DeepgramTTS {
   async _fetchVoicesFromDocs() {
@@ -154,6 +182,249 @@ class DeepgramTTS {
     } catch (err) {
       debug(err)
       throw new Error(`Deepgram TTS failed: ${err.message || err}`)
+    }
+  }
+
+  async tts_OpenStream (req, { language, voice }) {
+    const options = deepgramOptions(req)
+    if (!options.apiKey) {
+      throw new Error('Deepgram API key not configured')
+    }
+
+    const events = new EventEmitter()
+    const history = []
+    let isStreamClosed = false
+    let ws = null
+    let totalPcmLength = 0 // Track total PCM length for WAV header
+    let headerSent = false // Track if WAV header was sent
+
+    const speakOptions = {
+      model: voice || 'aura-2-asteria-en',
+      encoding: 'linear16',
+      sample_rate: 16000
+    }
+
+    // Apply default config from environment
+    if (process.env.BOTIUM_SPEECH_DEEPGRAM_TTS_CONFIG) {
+      try {
+        const defaultConfig = JSON.parse(process.env.BOTIUM_SPEECH_DEEPGRAM_TTS_CONFIG)
+        Object.assign(speakOptions, defaultConfig)
+      } catch (err) {
+        throw new Error(`Deepgram TTS config in BOTIUM_SPEECH_DEEPGRAM_TTS_CONFIG invalid: ${err.message}`)
+      }
+    }
+
+    // Apply request-specific config  
+    if (req.body && req.body.deepgram && req.body.deepgram.config) {
+      Object.assign(speakOptions, req.body.deepgram.config)
+    }
+
+    const triggerHistoryEmit = () => {
+      history.forEach(data => events.emit('data', data))
+    }
+
+    const write = (textChunk) => {
+      if (isStreamClosed || !ws) return
+      
+      debug(`Sending text chunk to Deepgram: ${textChunk}`)
+      
+      try {
+        ws.send(JSON.stringify({
+          type: 'Speak',
+          text: textChunk
+        }))
+      } catch (err) {
+        debug(`Error sending text chunk: ${err.message}`)
+        const errorData = {
+          status: 'error',
+          text: '',
+          final: true,
+          err: err.message
+        }
+        history.push(errorData)
+        events.emit('data', errorData)
+      }
+    }
+
+    const end = () => {
+      if (isStreamClosed || !ws) return
+      
+      debug('Closing Deepgram TTS stream')
+      try {
+        // Send flush to ensure all audio is processed
+        ws.send(JSON.stringify({ type: 'Flush' }))
+        
+        // Close the WebSocket connection
+        setTimeout(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.close()
+          }
+        }, 100)
+      } catch (err) {
+        debug(`Error closing stream: ${err.message}`)
+      }
+    }
+
+    const close = () => {
+      if (isStreamClosed) return
+      
+      isStreamClosed = true
+      debug('Force closing Deepgram TTS stream')
+      
+      if (ws) {
+        try {
+          ws.terminate()
+        } catch (err) {
+          debug(`Error terminating WebSocket: ${err.message}`)
+        }
+        ws = null
+      }
+      
+      events.emit('close')
+    }
+
+    // Build WebSocket URL with authentication and options
+    const wsUrl = new URL('wss://api.deepgram.com/v1/speak')
+    wsUrl.searchParams.append('model', speakOptions.model)
+    wsUrl.searchParams.append('encoding', speakOptions.encoding)
+    wsUrl.searchParams.append('sample_rate', speakOptions.sample_rate.toString())
+    
+    // Add other speak options as query parameters
+    Object.keys(speakOptions).forEach(key => {
+      if (!['model', 'encoding', 'sample_rate'].includes(key)) {
+        wsUrl.searchParams.append(key, speakOptions[key].toString())
+      }
+    })
+
+    debug(`Connecting to Deepgram TTS WebSocket: ${wsUrl.toString().replace(options.apiKey, '[API_KEY]')}`)
+
+    // Create WebSocket connection
+    ws = new WebSocket(wsUrl.toString(), {
+      headers: {
+        'Authorization': `Token ${options.apiKey}`
+      }
+    })
+
+    ws.on('open', () => {
+      debug('Deepgram TTS WebSocket connected')
+      
+      const openData = {
+        status: 'ok',
+        text: '',
+        final: false,
+        debug: { message: 'Stream opened' }
+      }
+      history.push(openData)
+      events.emit('data', openData)
+    })
+
+    ws.on('message', async (data) => {
+      try {
+        // Check if message is binary audio data
+        if (Buffer.isBuffer(data)) {
+          debug(`Received audio data: ${data.length} bytes`)
+          
+          // Send WAV header once at the beginning
+          if (!headerSent) {
+            // We need to estimate total size or send a placeholder header that gets updated
+            // For streaming, we'll use a large placeholder size that gets corrected by the client
+            const placeholderSize = 0xFFFFFFFF - 44 // Max size minus header
+            const wavHeader = createWavHeader(placeholderSize)
+            
+            const headerData = {
+              status: 'ok',
+              buffer: wavHeader,
+              final: false,
+              debug: { message: 'WAV header', audioLength: wavHeader.length }
+            }
+            history.push(headerData)
+            events.emit('data', headerData)
+            headerSent = true
+            debug('Sent WAV header (44 bytes)')
+          }
+          
+          // Send raw PCM data
+          totalPcmLength += data.length
+          const pcmData = {
+            status: 'ok',
+            buffer: data,
+            final: false,
+            debug: { 
+              message: 'PCM chunk',
+              audioLength: data.length,
+              totalPcmSoFar: totalPcmLength
+            }
+          }
+          history.push(pcmData)
+          events.emit('data', pcmData)
+        } else {
+          // Parse JSON metadata messages
+          const message = JSON.parse(data.toString())
+          debug(`Received metadata: ${JSON.stringify(message)}`)
+          
+          const metaData = {
+            status: 'ok',
+            text: '',
+            final: false,
+            debug: message
+          }
+          history.push(metaData)
+          events.emit('data', metaData)
+        }
+      } catch (err) {
+        debug(`Error processing message: ${err.message}`)
+        
+        const errorData = {
+          status: 'error',
+          text: '',
+          final: true,
+          err: err.message
+        }
+        history.push(errorData)
+        events.emit('data', errorData)
+      }
+    })
+
+    ws.on('error', (err) => {
+      debug(`Deepgram TTS WebSocket error: ${err.message}`)
+      
+      const errorData = {
+        status: 'error',
+        text: '',
+        final: true,
+        err: err.message
+      }
+      history.push(errorData)
+      events.emit('data', errorData)
+    })
+
+    ws.on('close', (code, reason) => {
+      debug(`Deepgram TTS WebSocket closed: ${code} ${reason}`)
+      debug(`Total PCM data streamed: ${totalPcmLength} bytes`)
+      
+      const closeData = {
+        status: 'ok',
+        text: '',
+        final: true,
+        debug: { 
+          closeCode: code, 
+          closeReason: reason.toString(),
+          totalPcmLength: totalPcmLength
+        }
+      }
+      history.push(closeData)
+      events.emit('data', closeData)
+      
+      close()
+    })
+
+    // Return stream interface compatible with routes.js
+    return {
+      events,
+      write,
+      end,
+      close,
+      triggerHistoryEmit
     }
   }
 }

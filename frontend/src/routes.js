@@ -488,6 +488,140 @@ router.post('/api/stt/:language', async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/ttsstream/{language}:
+ *   post:
+ *     description: Open a Websocket stream for converting text stream to audio
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: language
+ *         description: Language code (as returned from ttslanguages endpoint)
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tts
+ *         description: Text-to-speech backend
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [google, azure, polly, ibm, deepgram]
+ *       - name: voice
+ *         description: Voice name (as returned from ttsvoices endpoint)
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Websocket Url to stream the text to, and the uri to check status and end the stream
+ *         schema:
+ *           properties:
+ *             wsUri:
+ *               type: string
+ *             statusUri:
+ *               type: string
+ *             endUri:
+ *               type: string
+ */
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttsstream/:language', async (req, res, next) => {
+  try {
+    const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+
+    if (!tts.tts_OpenStream) {
+      return next(new Error(`TTS provider ${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS} does not support streaming`))
+    }
+
+    const streamId = uuidv1()
+    const stream = await tts.tts_OpenStream(req, { 
+      language: req.params.language,
+      voice: req.query.voice 
+    })
+    stream.events.on('close', () => delete wssStreams[streamId])
+    stream.dateTimeStart = new Date()
+    stream.type = 'tts'
+    wssStreams[streamId] = stream
+
+    const baseUrls = readBaseUrls(req)
+    res.json({
+      wsUri: `${baseUrls.wsUri}/${streamId}`,
+      statusUri: `${baseUrls.baseUri}/api/ttsstatus/${streamId}`,
+      endUri: `${baseUrls.baseUri}/api/ttsend/${streamId}`
+    }).end()
+  } catch (err) {
+    return next(err)
+  }
+}))
+
+/**
+ * @swagger
+ * /api/ttsstatus/{streamId}:
+ *   get:
+ *     description: Check a Websocket stream for converting text stream to audio
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: streamId
+ *         description: Stream Id (as returned from ttsstream endpoint)
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Websocket stream ok
+ *       404:
+ *         description: Websocket stream not available
+ */
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttsstatus/:streamId', async (req, res, next) => {
+  const stream = wssStreams[req.params.streamId]
+  if (stream) {
+    const streamDuration = ((new Date() - stream.dateTimeStart) / 1000).toFixed(3)
+    res.status(200).json({ status: 'OK', streamId: req.params.streamId, streamDuration })
+  } else {
+    res.status(404).json({ status: 'NOTFOUND', streamId: req.params.streamId })
+  }
+}))
+
+/**
+ * @swagger
+ * /api/ttsend/{streamId}:
+ *   get:
+ *     description: Close a Websocket stream for converting text stream to audio
+ *     security:
+ *       - ApiKeyAuth: []
+ *     produces:
+ *       - application/json
+ *     parameters:
+ *       - name: streamId
+ *         description: Stream Id (as returned from ttsstream endpoint)
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Websocket stream closed
+ */
+;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttsend/:streamId', async (req, res, next) => {
+  const stream = wssStreams[req.params.streamId]
+  if (stream) {
+    try {
+      stream.end()
+    } catch (err) {
+      return next(err)
+    }
+  }
+  res.end()
+}))
+
+/**
+ * @swagger
  * /api/audio/info:
  *   post:
  *     description: Returns information about audio file
@@ -806,6 +940,7 @@ const wssStreams = {}
     const stream = await stt.stt_OpenStream(req, { language: req.params.language })
     stream.events.on('close', () => delete wssStreams[streamId])
     stream.dateTimeStart = new Date()
+    stream.type = 'stt'
     wssStreams[streamId] = stream
 
     const baseUrls = readBaseUrls(req)
@@ -893,15 +1028,28 @@ const wssUpgrade = (req, socket, head) => {
     stream.events.on('data', async (data) => {
       if (data.err) debug(data)
       data.streamDuration = ((new Date() - stream.dateTimeStart) / 1000).toFixed(3)
-      ws.send(JSON.stringify(data))
+      
+      // For TTS streams, send audio data as binary, for STT send JSON
+      if (stream.type === 'tts' && data.buffer) {
+        ws.send(data.buffer)
+      } else {
+        ws.send(JSON.stringify(data))
+      }
     })
     stream.events.on('close', () => {
       ws.close()
       wss1.close()
     })
     ws.on('message', (data) => {
-      if (Buffer.isBuffer(data)) {
-        stream.write(data)
+      if (stream.type === 'tts') {
+        // TTS streams expect text messages
+        const textData = Buffer.isBuffer(data) ? data.toString('utf8') : data.toString()
+        stream.write(textData)
+      } else {
+        // STT streams expect audio buffers
+        if (Buffer.isBuffer(data)) {
+          stream.write(data)
+        }
       }
     })
     ws.on('close', () => {
@@ -917,7 +1065,7 @@ const wssUpgrade = (req, socket, head) => {
 }
 
 module.exports = {
-  skipSecurityCheck: (req) => (req.url.startsWith('/api/sttstatus/') || req.url.startsWith('/api/sttend/')),
+  skipSecurityCheck: (req) => (req.url.startsWith('/api/sttstatus/') || req.url.startsWith('/api/sttend/') || req.url.startsWith('/api/ttsstatus/') || req.url.startsWith('/api/ttsend/')),
   router,
   wssUpgrade
 }
