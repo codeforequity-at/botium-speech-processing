@@ -1,0 +1,19 @@
+version: '3'
+services:
+  nginx:
+    image: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+  frontend:
+    image: botium/botium-speech-frontend:latest
+    restart: always
+    environment:
+      BOTIUM_API_TOKENS: 
+      BOTIUM_SPEECH_PROVIDER_TTS: google
+      BOTIUM_SPEECH_PROVIDER_STT: deepgram
+      BOTIUM_SPEECH_DEEPGRAM_API_KEY:
+    volumes:
+      - "./frontend/resources:/app/resources"

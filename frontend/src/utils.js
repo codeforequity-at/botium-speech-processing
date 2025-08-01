@@ -170,6 +170,15 @@ const applyIfExists = (target, src, p) => {
   return Object.assign(target, _.get(src, p) || {})
 }
 
+const deepgramOptions = (req) => {
+  const apiKey = _.get(req, 'body.deepgram.credentials.apiKey') || process.env.BOTIUM_SPEECH_DEEPGRAM_API_KEY
+
+  if (apiKey) {
+    return { apiKey }
+  }
+  throw new Error('Deepgram API key not found')
+}
+
 module.exports = {
   asJson,
   enumValueToName,
@@ -184,5 +193,6 @@ module.exports = {
   applyExtraAzureSpeechConfig,
   getAzureErrorDetails,
   readBaseUrls,
-  applyIfExists
+  applyIfExists,
+  deepgramOptions
 }

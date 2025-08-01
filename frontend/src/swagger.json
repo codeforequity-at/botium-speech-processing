@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Botium Speech Processing API",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "description": "Botium Speech Processing API"
   },
   "basePath": "/",
@@ -56,11 +56,11 @@
             "schema": {
               "type": "string",
               "enum": [
-                "kaldi",
                 "google",
                 "ibm",
                 "azure",
-                "awstranscribe"
+                "awstranscribe",
+                "deepgram"
               ]
             }
           }
@@ -125,11 +125,11 @@
             "schema": {
               "type": "string",
               "enum": [
-                "kaldi",
                 "google",
                 "ibm",
                 "azure",
-                "awstranscribe"
+                "awstranscribe",
+                "deepgram"
               ]
             }
           },
@@ -196,8 +196,7 @@
                 "ibm",
                 "azure",
                 "polly",
-                "marytts",
-                "picotts"
+                "deepgram"
               ]
             }
           }
@@ -254,8 +253,7 @@
                 "ibm",
                 "azure",
                 "polly",
-                "marytts",
-                "picotts"
+                "deepgram"
               ]
             }
           }
@@ -324,8 +322,7 @@
                 "ibm",
                 "azure",
                 "polly",
-                "marytts",
-                "picotts"
+                "deepgram"
               ]
             }
           },
@@ -354,6 +351,134 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/ttsstream/{language}": {
+      "post": {
+        "description": "Open a Websocket stream for converting text stream to audio",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "language",
+            "description": "Language code (as returned from ttslanguages endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tts",
+            "description": "Text-to-speech backend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google",
+                "azure",
+                "polly",
+                "ibm",
+                "deepgram"
+              ]
+            }
+          },
+          {
+            "name": "voice",
+            "description": "Voice name (as returned from ttsvoices endpoint)",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket Url to stream the text to, and the uri to check status and end the stream",
+            "schema": {
+              "properties": {
+                "wsUri": {
+                  "type": "string"
+                },
+                "statusUri": {
+                  "type": "string"
+                },
+                "endUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ttsstatus/{streamId}": {
+      "get": {
+        "description": "Check a Websocket stream for converting text stream to audio",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "streamId",
+            "description": "Stream Id (as returned from ttsstream endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket stream ok"
+          },
+          "404": {
+            "description": "Websocket stream not available"
+          }
+        }
+      }
+    },
+    "/api/ttsend/{streamId}": {
+      "get": {
+        "description": "Close a Websocket stream for converting text stream to audio",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "streamId",
+            "description": "Stream Id (as returned from ttsstream endpoint)",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Websocket stream closed"
           }
         }
       }
@@ -637,11 +762,11 @@
             "schema": {
               "type": "string",
               "enum": [
-                "kaldi",
                 "google",
                 "ibm",
                 "azure",
-                "awstranscribe"
+                "awstranscribe",
+                "deepgram"
               ]
             }
           }
