@@ -22,7 +22,7 @@
     "@google-cloud/speech": "^7.0.1",
     "@google-cloud/storage": "^7.15.2",
     "@google-cloud/text-to-speech": "^6.0.1",
-    "body-parser": "^2.2.0",
+    "body-parser": "^2.2.1",
     "cheerio": "^1.0.0",
     "content-disposition": "^0.5.4",
     "cors": "^2.8.5",
