@@ -32,7 +32,7 @@
     "express": "^4.21.2",
     "express-winston": "^4.2.0",
     "ibm-watson": "^10.0.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "microsoft-cognitiveservices-speech-sdk": "^1.43.0",
     "mkdirp": "^3.0.1",
     "multer": "^1.4.4",
