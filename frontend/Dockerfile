@@ -1,7 +1,17 @@
 FROM ubuntu:20.04
 
-RUN apt-get update && apt-get -y install curl gnupg bc && curl -sL https://deb.nodesource.com/setup_18.x  | bash - && apt-get -y install nodejs
-RUN apt-get update && apt-get install -y dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg
+ENV DEBIAN_FRONTEND=noninteractive
+
+# CI mirrors can be flaky; retry slow downloads instead of failing the whole build.
+RUN printf 'Acquire::Retries "8";\nAcquire::http::Timeout "120";\nAcquire::https::Timeout "120";\n' > /etc/apt/apt.conf.d/99botium-retries
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl gnupg bc \
+  && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends nodejs \
+    dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY ./package.json /app/package.json
