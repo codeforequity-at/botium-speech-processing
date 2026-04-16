@@ -9,7 +9,8 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends curl gnupg bc \
   && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
   && apt-get update \
-  && apt-get install -y --no-install-recommends nodejs \
+  && apt-get install -y nodejs \
+  && apt-get install -y --no-install-recommends \
     dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
