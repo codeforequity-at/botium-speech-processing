@@ -2,17 +2,20 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# CI mirrors can be flaky; retry slow downloads instead of failing the whole build.
-RUN printf 'Acquire::Retries "8";\nAcquire::http::Timeout "120";\nAcquire::https::Timeout "120";\n' > /etc/apt/apt.conf.d/99botium-retries
+ARG NODE_VERSION=18.20.5
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends curl gnupg bc \
-  && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-  && apt-get update \
-  && apt-get install -y nodejs \
-  && apt-get install -y --no-install-recommends \
-    dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get -y install bc ca-certificates curl
+RUN apt-get update && apt-get install -y dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg
+
+RUN arch="$(dpkg --print-architecture)" \
+  && case "$arch" in \
+       amd64) node_arch=x64 ;; \
+       arm64) node_arch=arm64 ;; \
+       *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
+     esac \
+  && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${node_arch}.tar.gz" \
+    | tar -xz -C /usr/local --strip-components=1 \
+  && node --version && npm --version
 
 WORKDIR /app
 COPY ./package.json /app/package.json
