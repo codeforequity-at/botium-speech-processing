@@ -2,12 +2,13 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG NODE_VERSION=18.20.5
+ARG NODE_VERSION=20.19.4
 
-RUN apt-get update && apt-get -y install bc ca-certificates curl
-RUN apt-get update && apt-get install -y dos2unix sox libsox-fmt-mp3 libttspico-utils ffmpeg
-
-ARG NODE_VERSION1=20.19.4
+# One apt-get update for all distro packages (second RUN would re-fetch lists for little gain).
+RUN apt-get update \
+  && apt-get install -y \
+    bc ca-certificates curl dos2unix ffmpeg libsox-fmt-mp3 libttspico-utils sox \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN arch="$(dpkg --print-architecture)" \
   && case "$arch" in \
@@ -15,7 +16,7 @@ RUN arch="$(dpkg --print-architecture)" \
        arm64) node_arch=arm64 ;; \
        *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
      esac \
-  && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION1}/node-v${NODE_VERSION1}-linux-${node_arch}.tar.gz" \
+  && curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${node_arch}.tar.gz" \
     | tar -xz -C /usr/local --strip-components=1 \
   && node --version && npm --version
 
