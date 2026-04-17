@@ -157,7 +157,10 @@ const getAzureErrorDetails = (result) => {
 }
 
 const readBaseUrls = (req) => {
-  const proto = process.env.BOTIUM_SPEECH_URL ? process.env.BOTIUM_SPEECH_URL.split('://')[0] : req.protocol
+  const forwardedProto = req.headers['x-forwarded-proto'] && String(req.headers['x-forwarded-proto']).split(',')[0].trim().toLowerCase()
+  const proto = process.env.BOTIUM_SPEECH_URL
+    ? process.env.BOTIUM_SPEECH_URL.split('://')[0]
+    : (forwardedProto || req.protocol)
   const host = process.env.BOTIUM_SPEECH_URL ? process.env.BOTIUM_SPEECH_URL.split('://')[1] : req.headers['x-forwarded-host'] ? req.headers['x-forwarded-host'] : req.get('host')
 
   return {

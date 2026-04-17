@@ -12,6 +12,9 @@
   },
   "author": "Botium GmbH",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@aws-sdk/client-polly": "^3.776.0",
     "@aws-sdk/client-s3": "^3.775.0",

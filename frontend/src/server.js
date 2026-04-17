@@ -37,10 +37,13 @@ if (debug.enabled) {
   }))
 }
 
-app.use('/api/*', (req, res, next) => {
+app.use('/api', (req, res, next) => {
   if (skipSecurityCheck(req)) return next()
 
-  const clientApiToken = req.headers.BOTIUM_API_TOKEN || req.headers.botium_api_token || req.query.BOTIUM_API_TOKEN || req.query.botium_api_token || req.body.BOTIUM_API_TOKEN || req.body.botium_api_token
+  const headers = req.headers || {}
+  const query = req.query || {}
+  const body = req.body || {}
+  const clientApiToken = headers['botium_api_token'] || query.BOTIUM_API_TOKEN || query.botium_api_token || body.BOTIUM_API_TOKEN || body.botium_api_token
 
   if (apiTokens.length === 0 || apiTokens.indexOf(clientApiToken) >= 0) {
     next()

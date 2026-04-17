@@ -1064,8 +1064,14 @@ const wssUpgrade = (req, socket, head) => {
   })
 }
 
+const apiPathsWithoutToken = ['/api/sttstatus/', '/api/sttend/', '/api/ttsstatus/', '/api/ttsend/']
+
+const pathWithoutQuery = (req) => (req.originalUrl || req.url || '').split('?')[0]
+
+const skipSecurityCheck = (req) => apiPathsWithoutToken.some((prefix) => pathWithoutQuery(req).startsWith(prefix))
+
 module.exports = {
-  skipSecurityCheck: (req) => (req.url.startsWith('/api/sttstatus/') || req.url.startsWith('/api/sttend/') || req.url.startsWith('/api/ttsstatus/') || req.url.startsWith('/api/ttsend/')),
+  skipSecurityCheck,
   router,
   wssUpgrade
 }
