@@ -6,6 +6,7 @@ const { EventEmitter } = require('events')
 const debug = require('debug')('botium-speech-processing-deepgram-tts')
 
 const { deepgramOptions, ttsFilename } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 // Create WAV header for PCM data
 const createWavHeader = (pcmLength, sampleRate = 16000, channels = 1, bitsPerSample = 16) => {
@@ -93,13 +94,12 @@ class DeepgramTTS {
   }
 
   async voices (req) {
-    // Try to fetch from documentation first
+    return withApiCallLog('botium-speech-processing-deepgram-tts', req, 'DeepgramTTS', 'voices', {}, async () => {
     const docVoices = await this._fetchVoicesFromDocs()
     if (docVoices && docVoices.length > 0) {
       return docVoices
     }
-    
-    // Fallback to static list if documentation parsing fails  
+
     debug('Using fallback static voice list (Aura-2 only)')
     return [
       // English voices (Aura-2)
@@ -116,11 +116,14 @@ class DeepgramTTS {
       { name: 'aura-2-helios-en', gender: 'male', language: 'en' },
       { name: 'aura-2-zeus-en', gender: 'male', language: 'en' }
     ]
+    })
   }
 
   async languages (req) {
-    const voicesList = await this.voices(req)
-    return _.uniq(voicesList.map(v => v.language)).sort()
+    return withApiCallLog('botium-speech-processing-deepgram-tts', req, 'DeepgramTTS', 'languages', {}, async () => {
+      const voicesList = await this.voices(req)
+      return _.uniq(voicesList.map(v => v.language)).sort()
+    })
   }
 
   async tts (req, { language, voice, text }) {
@@ -152,37 +155,33 @@ class DeepgramTTS {
       Object.assign(speakOptions, req.body.deepgram.config)
     }
 
-    try {
-      debug(`Calling Deepgram TTS API with options: ${JSON.stringify(speakOptions)}`)
-      
-      const response = await deepgram.speak.request(
-        { text },
-        speakOptions
-      )
+    return withApiCallLog('botium-speech-processing-deepgram-tts', req, 'DeepgramTTS', 'tts', { language, voice, text, speakOptions }, async () => {
+      try {
+        const response = await deepgram.speak.request(
+          { text },
+          speakOptions
+        )
 
-      // Get the audio stream
-      const stream = await response.getStream()
-      if (!stream) {
-        throw new Error('No audio stream received from Deepgram')
+        const stream = await response.getStream()
+        if (!stream) {
+          throw new Error('No audio stream received from Deepgram')
+        }
+
+        const chunks = []
+        for await (const chunk of stream) {
+          chunks.push(chunk)
+        }
+        const buffer = Buffer.concat(chunks)
+
+        return {
+          buffer: buffer,
+          name: `${ttsFilename(text)}.wav`
+        }
+      } catch (err) {
+        debug(err)
+        throw new Error(`Deepgram TTS failed: ${err.message || err}`)
       }
-
-      // Convert stream to buffer
-      const chunks = []
-      for await (const chunk of stream) {
-        chunks.push(chunk)
-      }
-      const buffer = Buffer.concat(chunks)
-
-      debug(`Deepgram TTS response received, buffer size: ${buffer.length}`)
-
-      return {
-        buffer: buffer,
-        name: `${ttsFilename(text)}.wav`
-      }
-    } catch (err) {
-      debug(err)
-      throw new Error(`Deepgram TTS failed: ${err.message || err}`)
-    }
+    })
   }
 
   async tts_OpenStream (req, { language, voice }) {
@@ -219,13 +218,15 @@ class DeepgramTTS {
       Object.assign(speakOptions, req.body.deepgram.config)
     }
 
+    logLine('botium-speech-processing-deepgram-tts', 'start', req, 'DeepgramTTS', 'tts_OpenStream', { params: summarizeForLog({ language, voice, speakOptions }) })
+
     const triggerHistoryEmit = () => {
       history.forEach(data => events.emit('data', data))
     }
 
     const write = (textChunk) => {
       if (isStreamClosed || !ws) return
-      
+
       debug(`Sending text chunk to Deepgram: ${textChunk}`)
       
       try {
@@ -418,7 +419,7 @@ class DeepgramTTS {
       close()
     })
 
-    // Return stream interface compatible with routes.js
+    logLine('botium-speech-processing-deepgram-tts', 'end', req, 'DeepgramTTS', 'tts_OpenStream', { result: { stream: true } })
     return {
       events,
       write,

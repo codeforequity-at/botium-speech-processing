@@ -11,6 +11,7 @@ const contentDisposition = require('content-disposition')
 const { WebSocketServer } = require('ws')
 const { runconvert } = require('./convert/convert')
 const { wer, readBaseUrls } = require('./utils')
+const { withApiCallLog } = require('./apiCallLog')
 const { getAudioLengthSeconds } = require('./soxi')
 const debug = require('debug')('botium-speech-processing-routes')
 
@@ -106,6 +107,14 @@ const router = express.Router()
  *       type: apiKey
  *       in: header
  *       name: BOTIUM_API_TOKEN
+ *   parameters:
+ *     SessionIdQuery:
+ *       name: sessionId
+ *       in: query
+ *       description: Optional correlation id attached to provider debug logs. Same value may be sent as header `x-session-id` or `x-botium-session-id`, or as JSON property `sessionId` when the request body is JSON (e.g. TTS with credentials). For raw binary bodies (e.g. STT audio), use query or headers.
+ *       required: false
+ *       schema:
+ *         type: string
  */
 
 /**
@@ -115,6 +124,8 @@ const router = express.Router()
  *     description: Returns Botium Speech Processing Status
  *     security:
  *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *     produces:
  *       - application/json
  *     responses:
@@ -140,6 +151,7 @@ const router = express.Router()
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: stt
  *         description: Speech-to-text backend
  *         in: query
@@ -158,6 +170,9 @@ const router = express.Router()
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttlanguages', async (req, res, next) => {
   try {
     const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
+    if (_.isNil(stt)) {
+      return res.json([])
+    }
     res.json(await stt.languages(req))
   } catch (err) {
     return next(err)
@@ -174,6 +189,7 @@ const router = express.Router()
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: language
  *         description: Language code (as returned from sttlanguages endpoint)
  *         in: path
@@ -258,6 +274,11 @@ router.post('/api/stt/:language', async (req, res, next) => {
     }
     try {
       const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
+      if (_.isNil(stt) || !stt.stt) {
+        const err = new Error(`STT provider ${(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT} not configured`)
+        err.code = 400
+        return next(err)
+      }
 
       const result = await stt.stt(req, {
         language: req.params.language,
@@ -295,6 +316,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: tts
  *         description: Text-to-speech backend
  *         in: query
@@ -320,6 +342,9 @@ router.post('/api/stt/:language', async (req, res, next) => {
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttsvoices', async (req, res, next) => {
   try {
     const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+    if (_.isNil(tts)) {
+      return res.json([])
+    }
     res.json(await tts.voices(req))
   } catch (err) {
     return next(err)
@@ -336,6 +361,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: tts
  *         description: Text-to-speech backend
  *         in: query
@@ -355,7 +381,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
   try {
     const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
     if (_.isNil(tts)) {
-      res.json([])
+      return res.json([])
     }
     res.json(await tts.languages(req))
   } catch (err) {
@@ -373,6 +399,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     produces:
  *       - audio/wav
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: language
  *         description: Language code (as returned from ttslanguages endpoint)
  *         in: path
@@ -455,6 +482,11 @@ router.post('/api/stt/:language', async (req, res, next) => {
     }
     try {
       const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+      if (_.isNil(tts) || !tts.tts) {
+        const err = new Error(`TTS provider ${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS} not configured`)
+        err.code = 400
+        return next(err)
+      }
 
       const { buffer, name } = await tts.tts(req, {
         language: req.params.language,
@@ -496,6 +528,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: language
  *         description: Language code (as returned from ttslanguages endpoint)
  *         in: path
@@ -530,6 +563,11 @@ router.post('/api/stt/:language', async (req, res, next) => {
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/ttsstream/:language', async (req, res, next) => {
   try {
     const tts = ttsEngines[(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS]
+    if (_.isNil(tts)) {
+      const err = new Error(`TTS provider ${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS} not configured`)
+      err.code = 400
+      return next(err)
+    }
 
     if (!tts.tts_OpenStream) {
       return next(new Error(`TTS provider ${(req.query.tts && sanitize(req.query.tts)) || process.env.BOTIUM_SPEECH_PROVIDER_TTS} does not support streaming`))
@@ -566,6 +604,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: streamId
  *         description: Stream Id (as returned from ttsstream endpoint)
  *         in: path
@@ -598,6 +637,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: streamId
  *         description: Stream Id (as returned from ttsstream endpoint)
  *         in: path
@@ -627,6 +667,8 @@ router.post('/api/stt/:language', async (req, res, next) => {
  *     description: Returns information about audio file
  *     security:
  *       - ApiKeyAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *     requestBody:
  *       description: Audio file
  *       content:
@@ -674,6 +716,8 @@ router.post('/api/audio/info', async (req, res, next) => {
  *       - ApiKeyAuth: []
  *     produces:
  *       - application/json
+ *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *     responses:
  *       200:
  *         description: List of supported audio conversion profiles
@@ -705,6 +749,7 @@ router.post('/api/audio/info', async (req, res, next) => {
  *     produces:
  *       - audio/*
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: profile
  *         description: Conversion profile (for example WAVTOMONOWAV, MP3TOMONOWAV)
  *         in: path
@@ -757,7 +802,9 @@ router.post('/api/convert/:profile', async (req, res, next) => {
   const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${req.params.profile.toUpperCase()}_OUTPUT`
 
   try {
-    const { outputName, outputBuffer, outputDuration } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: buffer, start: req.query.start, end: req.query.end })
+    const { outputName, outputBuffer, outputDuration } = await withApiCallLog('botium-speech-processing-convert', req, 'convert', 'runconvert', { profile: req.params.profile, inputBytes: buffer.length, start: req.query.start, end: req.query.end }, async () => {
+      return runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: buffer, start: req.query.start, end: req.query.end })
+    })
     const headers = {
       'Content-disposition': `attachment; filename="${outputName}"`,
       'Content-Length': outputBuffer.length
@@ -780,6 +827,7 @@ router.post('/api/convert/:profile', async (req, res, next) => {
  *     produces:
  *       - audio/*
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: profile
  *         description: Conversion profile (for example WAVTOMONOWAV, MP3TOMONOWAV)
  *         in: query
@@ -842,7 +890,9 @@ router.post('/api/convert', async (req, res, next) => {
     const envVarOutput = `BOTIUM_SPEECH_CONVERT_PROFILE_${profile.toUpperCase()}_OUTPUT`
 
     try {
-      const { outputName, outputBuffer, outputDuration } = await runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: transformBuffer, start: req.query.start, end: req.query.end })
+      const { outputName, outputBuffer, outputDuration } = await withApiCallLog('botium-speech-processing-convert', req, 'convert', 'runconvert', { profile, inputBytes: transformBuffer.length, start: req.query.start, end: req.query.end }, async () => {
+        return runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: transformBuffer, start: req.query.start, end: req.query.end })
+      })
       transformBuffer = outputBuffer
       transformName = outputName
       transformDuration = outputDuration
@@ -869,6 +919,7 @@ router.post('/api/convert', async (req, res, next) => {
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: text1
  *         description: Text
  *         in: query
@@ -907,6 +958,7 @@ const wssStreams = {}
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: language
  *         description: Language code (as returned from sttlanguages endpoint)
  *         in: path
@@ -935,6 +987,11 @@ const wssStreams = {}
 ;[router.get.bind(router), router.post.bind(router)].forEach(m => m('/api/sttstream/:language', async (req, res, next) => {
   try {
     const stt = sttEngines[(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT]
+    if (_.isNil(stt) || !stt.stt_OpenStream) {
+      const err = new Error(`STT provider ${(req.query.stt && sanitize(req.query.stt)) || process.env.BOTIUM_SPEECH_PROVIDER_STT} not configured or does not support streaming`)
+      err.code = 400
+      return next(err)
+    }
 
     const streamId = uuidv1()
     const stream = await stt.stt_OpenStream(req, { language: req.params.language })
@@ -964,6 +1021,7 @@ const wssStreams = {}
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: streamId
  *         description: Stream Id (as returned from sttstream endpoint)
  *         in: path
@@ -996,6 +1054,7 @@ const wssStreams = {}
  *     produces:
  *       - application/json
  *     parameters:
+ *       - $ref: '#/components/parameters/SessionIdQuery'
  *       - name: streamId
  *         description: Stream Id (as returned from sttstream endpoint)
  *         in: path

@@ -6,6 +6,7 @@ const { ResultReason, AudioInputStream, AudioStreamFormat, AudioConfig, SpeechRe
 const debug = require('debug')('botium-speech-processing-azure')
 
 const { azureSpeechConfig, applyExtraAzureSpeechConfig, getAzureErrorDetails } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const AZURE_STT_LANGUAGES_URL = 'https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support'
 const downloadLanguageCodes = async () => {
@@ -28,10 +29,12 @@ let languageCodes = null
 
 class AzureSTT {
   async languages (req) {
-    if (!languageCodes) {
-      languageCodes = _.uniq(await downloadLanguageCodes()).sort()
-    }
-    return languageCodes
+    return withApiCallLog('botium-speech-processing-azure', req, 'AzureSTT', 'languages', {}, async () => {
+      if (!languageCodes) {
+        languageCodes = _.uniq(await downloadLanguageCodes()).sort()
+      }
+      return languageCodes
+    })
   }
 
   async stt_OpenStream (req, { language }) {
@@ -41,6 +44,8 @@ class AzureSTT {
     if (language) speechConfig.speechRecognitionLanguage = language
 
     applyExtraAzureSpeechConfig(speechConfig, req)
+
+    logLine('botium-speech-processing-azure', 'start', req, 'AzureSTT', 'stt_OpenStream', { params: summarizeForLog({ language }) })
 
     let audioFormat = AudioStreamFormat.getDefaultInputFormat()
     const extraAzureFormatConfig = _.get(req, 'body.azure.config.audioStreamFormat')
@@ -83,6 +88,7 @@ class AzureSTT {
     }
     recognizer.startContinuousRecognitionAsync()
 
+    logLine('botium-speech-processing-azure', 'end', req, 'AzureSTT', 'stt_OpenStream', { result: { stream: true } })
     return new Promise((resolve, reject) => {
       resolve({
         events,
@@ -106,49 +112,51 @@ class AzureSTT {
   }
 
   async stt (req, { language, buffer, hint }) {
-    const speechConfig = azureSpeechConfig(req)
+    return withApiCallLog('botium-speech-processing-azure', req, 'AzureSTT', 'stt', { language, buffer, hint }, async () => {
+      const speechConfig = azureSpeechConfig(req)
 
-    speechConfig.outputFormat = OutputFormat.Detailed
-    if (language) speechConfig.speechRecognitionLanguage = language
+      speechConfig.outputFormat = OutputFormat.Detailed
+      if (language) speechConfig.speechRecognitionLanguage = language
 
-    applyExtraAzureSpeechConfig(speechConfig, req)
+      applyExtraAzureSpeechConfig(speechConfig, req)
 
-    let audioFormat = AudioStreamFormat.getDefaultInputFormat()
-    const extraAzureFormatConfig = _.get(req, 'body.azure.config.audioStreamFormat')
-    if (extraAzureFormatConfig) {
-      audioFormat = AudioStreamFormat.getWaveFormatPCM(extraAzureFormatConfig.samplesPerSecond || 16000, extraAzureFormatConfig.bitsPerSample || 16, extraAzureFormatConfig.channels || 1)
-    }
-
-    const pushStream = AudioInputStream.createPushStream(audioFormat)
-    pushStream.write(buffer)
-    pushStream.close()
-
-    return new Promise((resolve, reject) => {
-      const audioConfig = AudioConfig.fromStreamInput(pushStream)
-      const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
-
-      if (hint && hint.length > 0) {
-        const phraseList = PhraseListGrammar.fromRecognizer(recognizer)
-        phraseList.addPhrase(hint)
+      let audioFormat = AudioStreamFormat.getDefaultInputFormat()
+      const extraAzureFormatConfig = _.get(req, 'body.azure.config.audioStreamFormat')
+      if (extraAzureFormatConfig) {
+        audioFormat = AudioStreamFormat.getWaveFormatPCM(extraAzureFormatConfig.samplesPerSecond || 16000, extraAzureFormatConfig.bitsPerSample || 16, extraAzureFormatConfig.channels || 1)
       }
 
-      recognizer.recognizeOnceAsync(
-        result => {
-          if (result.errorDetails) {
-            reject(new Error(`Azure STT failed: ${getAzureErrorDetails(result)}`))
-          } else {
-            resolve({
-              text: result.text || '',
-              debug: result
-            })
-          }
-          recognizer.close()
-        },
-        error => {
-          debug(error)
-          recognizer.close()
-          reject(new Error(`Azure STT failed: ${error}`))
-        })
+      const pushStream = AudioInputStream.createPushStream(audioFormat)
+      pushStream.write(buffer)
+      pushStream.close()
+
+      return new Promise((resolve, reject) => {
+        const audioConfig = AudioConfig.fromStreamInput(pushStream)
+        const recognizer = new SpeechRecognizer(speechConfig, audioConfig)
+
+        if (hint && hint.length > 0) {
+          const phraseList = PhraseListGrammar.fromRecognizer(recognizer)
+          phraseList.addPhrase(hint)
+        }
+
+        recognizer.recognizeOnceAsync(
+          result => {
+            if (result.errorDetails) {
+              reject(new Error(`Azure STT failed: ${getAzureErrorDetails(result)}`))
+            } else {
+              resolve({
+                text: result.text || '',
+                debug: result
+              })
+            }
+            recognizer.close()
+          },
+          error => {
+            debug(error)
+            recognizer.close()
+            reject(new Error(`Azure STT failed: ${error}`))
+          })
+      })
     })
   }
 }

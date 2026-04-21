@@ -5,6 +5,7 @@ const request = require('request-promise-native')
 const { WebSocket } = require('ws')
 const EventEmitter = require('events')
 const debug = require('debug')('botium-speech-processing-kaldi')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const getKaldiUrl = (language) => {
   const envVarUrl = `BOTIUM_SPEECH_KALDI_URL_${language.toUpperCase()}`
@@ -14,11 +15,14 @@ const getKaldiUrl = (language) => {
 
 class KaldiSTT {
   async languages (req) {
-    const envKeys = Object.keys(process.env).filter(k => k.startsWith('BOTIUM_SPEECH_KALDI_URL_'))
-    return _.uniq(envKeys.map(k => k.split('_')[4].toLowerCase())).sort()
+    return withApiCallLog('botium-speech-processing-kaldi', req, 'KaldiSTT', 'languages', {}, async () => {
+      const envKeys = Object.keys(process.env).filter(k => k.startsWith('BOTIUM_SPEECH_KALDI_URL_'))
+      return _.uniq(envKeys.map(k => k.split('_')[4].toLowerCase())).sort()
+    })
   }
 
   stt_OpenStream (req, { language }) {
+    logLine('botium-speech-processing-kaldi', 'start', req, 'KaldiSTT', 'stt_OpenStream', { params: summarizeForLog({ language }) })
     return new Promise((resolve, reject) => {
       const kaldiUrl = getKaldiUrl(language)
 
@@ -79,6 +83,7 @@ class KaldiSTT {
           events.emit('close')
         })
 
+        logLine('botium-speech-processing-kaldi', 'end', req, 'KaldiSTT', 'stt_OpenStream', { result: { stream: true } })
         resolve({
           events,
           write: (buffer) => {
@@ -104,47 +109,50 @@ class KaldiSTT {
           }
         })
       })
-      ws.on('error', (err) => reject(new Error(`Failed to open Kaldi stream to ${wsUri}: ${err.message}`)))
+      ws.on('error', (err) => {
+        logLine('botium-speech-processing-kaldi', 'error', req, 'KaldiSTT', 'stt_OpenStream', { error: err.message || String(err) })
+        reject(new Error(`Failed to open Kaldi stream to ${wsUri}: ${err.message}`))
+      })
     })
   }
 
   async stt (req, { language, buffer }) {
-    const requestOptions = {
-      method: 'PUT',
-      uri: getKaldiUrl(language),
-      body: buffer,
-      resolveWithFullResponse: true,
-      simple: false
-    }
+    return withApiCallLog('botium-speech-processing-kaldi', req, 'KaldiSTT', 'stt', { language, buffer }, async () => {
+      const requestOptions = {
+        method: 'PUT',
+        uri: getKaldiUrl(language),
+        body: buffer,
+        resolveWithFullResponse: true,
+        simple: false
+      }
 
-    let response
-    try {
-      debug(`Calling kaldi url ${requestOptions.uri} ...`)
-      response = await request(requestOptions)
-    } catch (err) {
-      throw new Error(`Calling url ${requestOptions.uri} failed: ${err.message}`)
-    }
-    if (response.statusCode === 200) {
-      const body = JSON.parse(response.body)
-      debug(`Called url ${requestOptions.uri} success: ${util.inspect(body)}`)
-      if (body.status === 0) {
-        if (body.hypotheses && body.hypotheses[0].utterance) {
-          return {
-            text: body.hypotheses[0].utterance,
-            debug: body
+      let response
+      try {
+        response = await request(requestOptions)
+      } catch (err) {
+        throw new Error(`Calling url ${requestOptions.uri} failed: ${err.message}`)
+      }
+      if (response.statusCode === 200) {
+        const body = JSON.parse(response.body)
+        if (body.status === 0) {
+          if (body.hypotheses && body.hypotheses[0].utterance) {
+            return {
+              text: body.hypotheses[0].utterance,
+              debug: body
+            }
+          } else {
+            return {
+              text: '',
+              debug: body
+            }
           }
         } else {
-          return {
-            text: '',
-            debug: body
-          }
+          throw new Error(`Kaldi failed with code ${body.status}: ${body.message}`)
         }
       } else {
-        throw new Error(`Kaldi failed with code ${body.status}: ${body.message}`)
+        throw new Error(`Calling url ${requestOptions.uri} failed with code ${response.statusCode}: ${response.statusMessage}`)
       }
-    } else {
-      throw new Error(`Calling url ${requestOptions.uri} failed with code ${response.statusCode}: ${response.statusMessage}`)
-    }
+    })
   }
 }
 

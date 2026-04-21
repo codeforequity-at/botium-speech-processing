@@ -6,6 +6,7 @@ const axios = require('axios')
 const debug = require('debug')('botium-speech-processing-deepgram-stt')
 
 const { deepgramOptions } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 class DeepgramSTT {
   async _fetchLanguagesFromDocs() {
@@ -53,20 +54,20 @@ class DeepgramSTT {
   }
 
   async languages (req) {
-    // Try to fetch from documentation first
-    const docLanguages = await this._fetchLanguagesFromDocs()
-    if (docLanguages && docLanguages.length > 0) {
-      return docLanguages
-    }
-    
-    // Fallback to static list if documentation parsing fails
-    debug('Using fallback static language list')
-    return []
+    return withApiCallLog('botium-speech-processing-deepgram-stt', req, 'DeepgramSTT', 'languages', {}, async () => {
+      const docLanguages = await this._fetchLanguagesFromDocs()
+      if (docLanguages && docLanguages.length > 0) {
+        return docLanguages
+      }
+      debug('Using fallback static language list')
+      return []
+    })
   }
 
   async stt_OpenStream (req, { language }) {
     const options = deepgramOptions(req)
     if (!options.apiKey) {
+      logLine('botium-speech-processing-deepgram-stt', 'error', req, 'DeepgramSTT', 'stt_OpenStream', { error: 'Deepgram API key not configured' })
       throw new Error('Deepgram API key not configured')
     }
 
@@ -96,6 +97,8 @@ class DeepgramSTT {
     if (req.body && req.body.deepgram && req.body.deepgram.config) {
       Object.assign(streamOptions, req.body.deepgram.config)
     }
+
+    logLine('botium-speech-processing-deepgram-stt', 'start', req, 'DeepgramSTT', 'stt_OpenStream', { params: summarizeForLog({ language, streamOptions }) })
 
     const events = new EventEmitter()
     let eventHistory = []
@@ -153,9 +156,11 @@ class DeepgramSTT {
 
     } catch (err) {
       debug(err)
+      logLine('botium-speech-processing-deepgram-stt', 'error', req, 'DeepgramSTT', 'stt_OpenStream', { error: err.message || String(err) })
       throw new Error(`Deepgram STT streaming setup failed: ${err.message}`)
     }
 
+    logLine('botium-speech-processing-deepgram-stt', 'end', req, 'DeepgramSTT', 'stt_OpenStream', { result: { stream: true } })
     return {
       events,
       write: (buffer) => {
@@ -218,35 +223,33 @@ class DeepgramSTT {
       Object.assign(transcribeOptions, req.body.deepgram.config)
     }
 
-    try {
-      debug(`Calling Deepgram API with options: ${JSON.stringify(transcribeOptions)}`)
-      
-      const response = await deepgram.listen.prerecorded.transcribeFile(
-        buffer,
-        transcribeOptions
-      )
+    return withApiCallLog('botium-speech-processing-deepgram-stt', req, 'DeepgramSTT', 'stt', { language, buffer, hint, transcribeOptions }, async () => {
+      try {
+        const response = await deepgram.listen.prerecorded.transcribeFile(
+          buffer,
+          transcribeOptions
+        )
 
-      debug(`Deepgram response: ${JSON.stringify(response, null, 2)}`)
-
-      if (response.results && response.results.channels && response.results.channels[0]) {
-        const channel = response.results.channels[0]
-        if (channel.alternatives && channel.alternatives[0]) {
-          const transcript = channel.alternatives[0].transcript || ''
-          return {
-            text: transcript,
-            debug: response
+        if (response.results && response.results.channels && response.results.channels[0]) {
+          const channel = response.results.channels[0]
+          if (channel.alternatives && channel.alternatives[0]) {
+            const transcript = channel.alternatives[0].transcript || ''
+            return {
+              text: transcript,
+              debug: response
+            }
           }
         }
-      }
 
-      return {
-        text: '',
-        debug: response
+        return {
+          text: '',
+          debug: response
+        }
+      } catch (err) {
+        debug(err)
+        throw new Error(`Deepgram STT failed: ${err.message || err}`)
       }
-    } catch (err) {
-      debug(err)
-      throw new Error(`Deepgram STT failed: ${err.message || err}`)
-    }
+    })
   }
 }
 

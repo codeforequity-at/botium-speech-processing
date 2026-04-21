@@ -5,13 +5,16 @@ const { PassThrough } = require('stream')
 const EventEmitter = require('events')
 
 const { ibmSttOptions } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 class IbmSTT {
   async languages (req) {
-    const speechToText = new SpeechToTextV1(ibmSttOptions(req))
+    return withApiCallLog('botium-speech-processing-ibm-stt', req, 'IbmSTT', 'languages', {}, async () => {
+      const speechToText = new SpeechToTextV1(ibmSttOptions(req))
 
-    const speechModels = await speechToText.listModels()
-    return _.uniq(speechModels.result.models.map(m => m.language)).sort()
+      const speechModels = await speechToText.listModels()
+      return _.uniq(speechModels.result.models.map(m => m.language)).sort()
+    })
   }
 
   async stt_OpenStream (req, { language }) {
@@ -31,11 +34,14 @@ class IbmSTT {
       Object.assign(recognizeParams, req.body.ibm.config)
     }
 
+    logLine('botium-speech-processing-ibm-stt', 'start', req, 'IbmSTT', 'stt_OpenStream', { params: summarizeForLog({ language, recognizeParams }) })
+
     let recognizeStream = null
     try {
       recognizeStream = speechToText.recognizeUsingWebSocket(recognizeParams)
     } catch (err) {
       debug(err)
+      logLine('botium-speech-processing-ibm-stt', 'error', req, 'IbmSTT', 'stt_OpenStream', { error: err.message || String(err) })
       throw new Error(`IBM STT streaming failed: ${err.message}`)
     }
 
@@ -75,6 +81,7 @@ class IbmSTT {
       events.emit('close')
     })
 
+    logLine('botium-speech-processing-ibm-stt', 'end', req, 'IbmSTT', 'stt_OpenStream', { result: { stream: true } })
     return {
       events,
       write: (buffer) => {
@@ -125,18 +132,19 @@ class IbmSTT {
       Object.assign(recognizeParams, req.body.ibm.config)
     }
 
-    try {
-      const speechRecognitionResults = await speechToText.recognize(recognizeParams)
-      debug(`IBM STT response: ${JSON.stringify(speechRecognitionResults, null, 2)}`)
-      const transcription = _.get(speechRecognitionResults, 'result.results[0].alternatives[0].transcript')
-      return {
-        text: transcription,
-        debug: speechRecognitionResults
+    return withApiCallLog('botium-speech-processing-ibm-stt', req, 'IbmSTT', 'stt', { language, buffer, recognizeParams }, async () => {
+      try {
+        const speechRecognitionResults = await speechToText.recognize(recognizeParams)
+        const transcription = _.get(speechRecognitionResults, 'result.results[0].alternatives[0].transcript')
+        return {
+          text: transcription,
+          debug: speechRecognitionResults
+        }
+      } catch (err) {
+        debug(err)
+        throw new Error(`IBM STT failed: ${err.message}`)
       }
-    } catch (err) {
-      debug(err)
-      throw new Error(`IBM STT failed: ${err.message}`)
-    }
+    })
   }
 }
 

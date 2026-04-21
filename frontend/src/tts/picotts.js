@@ -5,6 +5,7 @@ const { v1: uuidv1 } = require('uuid')
 const debug = require('debug')('botium-speech-processing-picotts')
 
 const { ttsFilename } = require('../utils')
+const { withApiCallLog } = require('../apiCallLog')
 
 const voicesList = [
   {
@@ -41,14 +42,15 @@ const voicesList = [
 
 class PicoTTS {
   async voices (req) {
-    return voicesList
+    return withApiCallLog('botium-speech-processing-picotts', req, 'PicoTTS', 'voices', {}, async () => voicesList)
   }
 
   async languages (req) {
-    return _.uniq(voicesList.map(v => v.language)).sort()
+    return withApiCallLog('botium-speech-processing-picotts', req, 'PicoTTS', 'languages', {}, async () => _.uniq(voicesList.map(v => v.language)).sort())
   }
 
   async tts (req, { language, voice, text }) {
+    return withApiCallLog('botium-speech-processing-picotts', req, 'PicoTTS', 'tts', { language, voice, text }, async () => new Promise((resolve, reject) => {
     const picoVoice = voicesList.find(v => {
       if (language && !v.language.startsWith(language)) return false
       if (voice && v.name !== voice) return false
@@ -56,7 +58,6 @@ class PicoTTS {
     })
     if (!picoVoice) throw new Error(`Voice <${voice || 'default'}> for language <${language}> not available`)
 
-    return new Promise((resolve, reject) => {
       const output = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${uuidv1()}.wav`
 
       const cmdLinePico = `${process.env.BOTIUM_SPEECH_PICO_CMDPREFIX || 'pico2wave'} --lang=${picoVoice.name} --wave=${output}`
@@ -97,7 +98,7 @@ class PicoTTS {
       pico.stderr.on('data', (data) => {
         debug('stderr ' + data)
       })
-    })
+    }))
   }
 }
 
