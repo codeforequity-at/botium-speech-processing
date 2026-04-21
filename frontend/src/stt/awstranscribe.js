@@ -10,6 +10,7 @@ const EventEmitter = require('events')
 const debug = require('debug')('botium-speech-processing-awstranscribe-stt')
 
 const { awstranscribeOptions, applyIfExists } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const languageCodes = [
   'af-ZA',
@@ -53,7 +54,7 @@ const languageCodes = [
 
 class AwsTranscribeSTT {
   async languages (req) {
-    return languageCodes
+    return withApiCallLog('botium-speech-processing-awstranscribe-stt', req, 'AwsTranscribeSTT', 'languages', {}, async () => languageCodes)
   }
 
   async stt_OpenStream (req, { language }) {
@@ -76,6 +77,8 @@ class AwsTranscribeSTT {
       AudioStream: audioStream()
     }
     applyIfExists(request, req, 'req.body.awstranscribe.config.streaming')
+
+    logLine('botium-speech-processing-awstranscribe-stt', 'start', req, 'AwsTranscribeSTT', 'stt_OpenStream', { params: summarizeForLog({ language, request: _.omit(request, ['AudioStream']) }) })
 
     const events = new EventEmitter()
     let eventHistory = []
@@ -115,8 +118,10 @@ class AwsTranscribeSTT {
       }, 0)
     } catch (err) {
       debug(`StartStreamTranscriptionCommand failure: ${err.Message || err.message || err}`)
+      logLine('botium-speech-processing-awstranscribe-stt', 'error', req, 'AwsTranscribeSTT', 'stt_OpenStream', { error: err.Message || err.message || String(err) })
       throw new Error(`AWS Transcribe STT streaming failed: ${err.Message || err.message || err}`)
     }
+    logLine('botium-speech-processing-awstranscribe-stt', 'end', req, 'AwsTranscribeSTT', 'stt_OpenStream', { result: { stream: true } })
     return {
       events,
       write: (buffer) => {
@@ -143,6 +148,7 @@ class AwsTranscribeSTT {
   }
 
   async stt (req, { language, buffer, hint }) {
+    return withApiCallLog('botium-speech-processing-awstranscribe-stt', req, 'AwsTranscribeSTT', 'stt', { language, buffer, hint }, async () => {
     const transcribeClient = new TranscribeClient(awstranscribeOptions(req))
     const s3Client = new S3Client(awstranscribeOptions(req))
 
@@ -161,7 +167,7 @@ class AwsTranscribeSTT {
         MediaFileUri: `s3://${putRequest.Bucket}/${putRequest.Key}`
       }
     }
-    applyIfExists(putRequest, req, 'req.body.awstranscribe.config.transcribe')
+    applyIfExists(transcribeJobRequest, req, 'req.body.awstranscribe.config.transcribe')
 
     try {
       await s3Client.send(new PutObjectCommand({
@@ -186,7 +192,6 @@ class AwsTranscribeSTT {
           const jobStatus = await transcribeClient.send(new GetTranscriptionJobCommand({
             TranscriptionJobName: transcriptionJob.TranscriptionJobName
           }))
-          debug(`Checking Transcription Job for ${transcribeJobRequest.Media.MediaFileUri} status: ${JSON.stringify(jobStatus.TranscriptionJob)}`)
           if (jobStatus.TranscriptionJob.TranscriptionJobStatus === TranscriptionJobStatus.COMPLETED) {
             try {
               const transcriptionFile = await axios.get(jobStatus.TranscriptionJob.Transcript.TranscriptFileUri)
@@ -223,6 +228,7 @@ class AwsTranscribeSTT {
         debug(`Deleting Transcription Job ${transcribeJobRequest.TranscriptionJobName} failure:  ${err.message || err}`)
       }
     }
+    })
   }
 }
 

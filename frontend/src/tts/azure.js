@@ -5,6 +5,7 @@ const { EventEmitter } = require('events')
 const debug = require('debug')('botium-speech-processing-azure-tts')
 
 const { azureSpeechConfig, applyExtraAzureSpeechConfig, getAzureErrorDetails, ttsFilename } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 // Create WAV header for PCM data
 const createWavHeader = (pcmLength, sampleRate = 16000, channels = 1, bitsPerSample = 16) => {
@@ -47,60 +48,66 @@ const genderMap = {
 
 class AzureTTS {
   async voices (req) {
-    const speechConfig = azureSpeechConfig(req)
+    return withApiCallLog('botium-speech-processing-azure-tts', req, 'AzureTTS', 'voices', {}, async () => {
+      const speechConfig = azureSpeechConfig(req)
 
-    const { data } = await axios({
-      url: `https://${speechConfig.region}.tts.speech.microsoft.com/cognitiveservices/voices/list`,
-      method: 'GET',
-      headers: {
-        'Ocp-Apim-Subscription-Key': speechConfig.subscriptionKey
-      }
-    })
-    const azureVoices = []
-    data.forEach(voice => {
-      azureVoices.push({
-        name: voice.ShortName,
-        gender: genderMap[voice.Gender],
-        language: voice.Locale
+      const { data } = await axios({
+        url: `https://${speechConfig.region}.tts.speech.microsoft.com/cognitiveservices/voices/list`,
+        method: 'GET',
+        headers: {
+          'Ocp-Apim-Subscription-Key': speechConfig.subscriptionKey
+        }
       })
+      const azureVoices = []
+      data.forEach(voice => {
+        azureVoices.push({
+          name: voice.ShortName,
+          gender: genderMap[voice.Gender],
+          language: voice.Locale
+        })
+      })
+      return azureVoices
     })
-    return azureVoices
   }
 
   async languages (req) {
-    const voicesList = await this.voices(req)
-    return _.uniq(voicesList.map(v => v.language)).sort()
+    return withApiCallLog('botium-speech-processing-azure-tts', req, 'AzureTTS', 'languages', {}, async () => {
+      const voicesList = await this.voices(req)
+      return _.uniq(voicesList.map(v => v.language)).sort()
+    })
   }
 
   async tts (req, { language, voice, text }) {
-    const speechConfig = azureSpeechConfig(req)
-    speechConfig.speechSynthesisOutputFormat = SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm
+    return withApiCallLog('botium-speech-processing-azure-tts', req, 'AzureTTS', 'tts', { language, voice, text }, async () => {
+      const speechConfig = azureSpeechConfig(req)
+      speechConfig.speechSynthesisOutputFormat = SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm
 
-    if (language) speechConfig.speechSynthesisLanguage = language
-    if (voice) speechConfig.speechSynthesisVoiceName = voice
+      if (language) speechConfig.speechSynthesisLanguage = language
+      if (voice) speechConfig.speechSynthesisVoiceName = voice
 
-    applyExtraAzureSpeechConfig(speechConfig, req)
+      applyExtraAzureSpeechConfig(speechConfig, req)
 
-    return new Promise((resolve, reject) => {
-      const synthesizer = new SpeechSynthesizer(speechConfig)
-      synthesizer.speakTextAsync(text,
-        result => {
-          const { audioData, errorDetails } = result
-          if (errorDetails) {
-            reject(new Error(`Azure TTS failed: ${getAzureErrorDetails(result)}`))
-          } else if (audioData) {
-            resolve({
-              buffer: Buffer.from(result.audioData),
-              name: `${ttsFilename(text)}.wav`
-            })
-          }
-          synthesizer.close()
-        },
-        error => {
-          debug(error)
-          synthesizer.close()
-          reject(new Error(`Azure TTS failed: ${error}`))
-        })
+      return new Promise((resolve, reject) => {
+        const synthesizer = new SpeechSynthesizer(speechConfig)
+        synthesizer.speakTextAsync(text,
+          result => {
+            const { audioData, errorDetails } = result
+            if (errorDetails) {
+              reject(new Error(`Azure TTS failed: ${getAzureErrorDetails(result)}`))
+            } else if (audioData) {
+              resolve({
+                buffer: Buffer.from(result.audioData),
+                name: `${ttsFilename(text)}.wav`
+              })
+            }
+            synthesizer.close()
+          },
+          error => {
+            debug(error)
+            synthesizer.close()
+            reject(new Error(`Azure TTS failed: ${error}`))
+          })
+      })
     })
   }
 
@@ -112,6 +119,8 @@ class AzureTTS {
     if (voice) speechConfig.speechSynthesisVoiceName = voice
 
     applyExtraAzureSpeechConfig(speechConfig, req)
+
+    logLine('botium-speech-processing-azure-tts', 'start', req, 'AzureTTS', 'tts_OpenStream', { params: summarizeForLog({ language, voice }) })
 
     const events = new EventEmitter()
     const history = []
@@ -347,10 +356,11 @@ class AzureTTS {
 
     } catch (err) {
       debug(`Error opening Azure TTS stream: ${err.message}`)
+      logLine('botium-speech-processing-azure-tts', 'error', req, 'AzureTTS', 'tts_OpenStream', { error: err.message || String(err) })
       throw new Error(`Azure TTS streaming failed: ${err.message}`)
     }
 
-    // Return stream interface compatible with routes.js
+    logLine('botium-speech-processing-azure-tts', 'end', req, 'AzureTTS', 'tts_OpenStream', { result: { stream: true } })
     return {
       events,
       write,

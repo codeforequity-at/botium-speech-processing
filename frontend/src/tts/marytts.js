@@ -3,11 +3,13 @@ const request = require('request-promise-native')
 const debug = require('debug')('botium-speech-processing-marytts')
 
 const { ttsFilename } = require('../utils')
+const { withApiCallLog } = require('../apiCallLog')
 
 let maryVoices = null
 
 class MaryTTS {
   async voices (req) {
+    return withApiCallLog('botium-speech-processing-marytts', req, 'MaryTTS', 'voices', {}, async () => {
     if (maryVoices) return maryVoices
 
     const requestOptions = {
@@ -33,15 +35,19 @@ class MaryTTS {
       }
     }
     return maryVoices
+    })
   }
 
   async languages (req) {
-    const voicesList = await this.voices()
-    return _.uniq(voicesList.map(v => v.language)).sort()
+    return withApiCallLog('botium-speech-processing-marytts', req, 'MaryTTS', 'languages', {}, async () => {
+      const voicesList = await this.voices(req)
+      return _.uniq(voicesList.map(v => v.language)).sort()
+    })
   }
 
   async tts (req, { language, voice, text }) {
-    const voicesList = await this.voices()
+    return withApiCallLog('botium-speech-processing-marytts', req, 'MaryTTS', 'tts', { language, voice, text }, async () => {
+    const voicesList = await this.voices(req)
 
     const maryVoice = voicesList.find(v => {
       if (language && !v.language.startsWith(language)) return false
@@ -74,6 +80,7 @@ class MaryTTS {
     } else {
       throw new Error(`Calling url ${requestOptions.uri} failed with code ${response.statusCode}: ${response.statusMessage}`)
     }
+    })
   }
 }
 

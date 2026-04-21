@@ -4,6 +4,7 @@ const { EventEmitter } = require('events')
 const debug = require('debug')('botium-speech-processing-google-tts')
 
 const { googleOptions, ttsFilename } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 // Create WAV header for PCM data
 const createWavHeader = (pcmLength, sampleRate = 16000, channels = 1, bitsPerSample = 16) => {
@@ -39,27 +40,31 @@ const genderMap = {
 
 class GoogleTTS {
   async voices (req) {
-    const client = new textToSpeech.TextToSpeechClient(googleOptions(req))
+    return withApiCallLog('botium-speech-processing-google-tts', req, 'GoogleTTS', 'voices', {}, async () => {
+      const client = new textToSpeech.TextToSpeechClient(googleOptions(req))
 
-    const [result] = await client.listVoices({})
-    const voices = result.voices
+      const [result] = await client.listVoices({})
+      const voices = result.voices
 
-    const googleVoices = []
-    voices.forEach(voice => {
-      voice.languageCodes.forEach(languageCode => {
-        googleVoices.push({
-          name: voice.name,
-          gender: genderMap[voice.ssmlGender],
-          language: languageCode
+      const googleVoices = []
+      voices.forEach(voice => {
+        voice.languageCodes.forEach(languageCode => {
+          googleVoices.push({
+            name: voice.name,
+            gender: genderMap[voice.ssmlGender],
+            language: languageCode
+          })
         })
       })
+      return googleVoices
     })
-    return googleVoices
   }
 
   async languages (req) {
-    const voicesList = await this.voices(req)
-    return _.uniq(voicesList.map(v => v.language)).sort()
+    return withApiCallLog('botium-speech-processing-google-tts', req, 'GoogleTTS', 'languages', {}, async () => {
+      const voicesList = await this.voices(req)
+      return _.uniq(voicesList.map(v => v.language)).sort()
+    })
   }
 
   async tts (req, { language, voice, text }) {
@@ -82,16 +87,18 @@ class GoogleTTS {
       Object.assign(request, req.body.google.config)
     }
 
-    try {
-      const [response] = await client.synthesizeSpeech(request)
-      return {
-        buffer: response.audioContent,
-        name: `${ttsFilename(text)}.wav`
+    return withApiCallLog('botium-speech-processing-google-tts', req, 'GoogleTTS', 'tts', { language, voice, text, request: { input: request.input, voice: request.voice, audioConfig: request.audioConfig } }, async () => {
+      try {
+        const [response] = await client.synthesizeSpeech(request)
+        return {
+          buffer: response.audioContent,
+          name: `${ttsFilename(text)}.wav`
+        }
+      } catch (err) {
+        debug(err)
+        throw new Error(`Google Cloud TTS failed: ${err.message}`)
       }
-    } catch (err) {
-      debug(err)
-      throw new Error(`Google Cloud TTS failed: ${err.message}`)
-    }
+    })
   }
 
   async tts_OpenStream (req, { language, voice }) {
@@ -124,6 +131,8 @@ class GoogleTTS {
     if (req.body && req.body.google && req.body.google.config) {
       Object.assign(streamingConfig, req.body.google.config)
     }
+
+    logLine('botium-speech-processing-google-tts', 'start', req, 'GoogleTTS', 'tts_OpenStream', { params: summarizeForLog({ language, voice, streamingConfig }) })
 
     const triggerHistoryEmit = () => {
       history.forEach(data => events.emit('data', data))
@@ -287,10 +296,11 @@ class GoogleTTS {
 
     } catch (err) {
       debug(`Error opening Google TTS stream: ${err.message}`)
+      logLine('botium-speech-processing-google-tts', 'error', req, 'GoogleTTS', 'tts_OpenStream', { error: err.message || String(err) })
       throw new Error(`Google Cloud TTS streaming failed: ${err.message}`)
     }
 
-    // Return stream interface compatible with routes.js
+    logLine('botium-speech-processing-google-tts', 'end', req, 'GoogleTTS', 'tts_OpenStream', { result: { stream: true } })
     return {
       events,
       write,

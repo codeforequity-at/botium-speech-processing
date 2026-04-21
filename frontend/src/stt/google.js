@@ -10,6 +10,7 @@ const EventEmitter = require('events')
 const debug = require('debug')('botium-speech-processing-google-stt')
 
 const { googleOptions } = require('../utils')
+const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const GOOGLE_STT_LANGUAGES_URL = 'https://cloud.google.com/speech-to-text/docs/languages'
 const downloadLanguageCodes = async () => {
@@ -32,10 +33,12 @@ let languageCodes = null
 
 class GoogleSTT {
   async languages (req) {
-    if (!languageCodes) {
-      languageCodes = _.uniq(await downloadLanguageCodes()).sort()
-    }
-    return languageCodes
+    return withApiCallLog('botium-speech-processing-google-stt', req, 'GoogleSTT', 'languages', {}, async () => {
+      if (!languageCodes) {
+        languageCodes = _.uniq(await downloadLanguageCodes()).sort()
+      }
+      return languageCodes
+    })
   }
 
   async stt_OpenStream (req, { language }) {
@@ -62,11 +65,14 @@ class GoogleSTT {
       Object.assign(request.config, req.body.google.config)
     }
 
+    logLine('botium-speech-processing-google-stt', 'start', req, 'GoogleSTT', 'stt_OpenStream', { params: summarizeForLog({ language, requestConfig: request.config }) })
+
     let recognizeStream = null
     try {
       recognizeStream = speechClient.streamingRecognize(request)
     } catch (err) {
       debug(err)
+      logLine('botium-speech-processing-google-stt', 'error', req, 'GoogleSTT', 'stt_OpenStream', { error: err.message || String(err) })
       throw new Error(`Google Cloud STT streaming failed: ${err.message}`)
     }
 
@@ -104,6 +110,7 @@ class GoogleSTT {
       events.emit('close')
     })
 
+    logLine('botium-speech-processing-google-stt', 'end', req, 'GoogleSTT', 'stt_OpenStream', { result: { stream: true } })
     return {
       events,
       write: (buffer) => {
@@ -160,61 +167,58 @@ class GoogleSTT {
     const gcsFileName = `${uuidv1()}.wav`
     const googleBucketName = (req.body.google && req.body.google.bucketName) || process.env.BOTIUM_SPEECH_GOOGLE_BUCKET_NAME
 
-    if (googleBucketName) {
-      try {
-        const bucket = storageClient.bucket(googleBucketName)
-        const file = bucket.file(gcsFileName)
+    return withApiCallLog('botium-speech-processing-google-stt', req, 'GoogleSTT', 'stt', { language, buffer, hint, googleBucketName: !!googleBucketName }, async () => {
+      if (googleBucketName) {
+        try {
+          const bucket = storageClient.bucket(googleBucketName)
+          const file = bucket.file(gcsFileName)
 
-        const stream = file.createWriteStream({
-          metadata: {
-            contentType: 'audio/wav'
-          }
-        })
-        await (new Promise((resolve, reject) => {
-          stream.on('error', (err) => {
-            reject(err)
+          const stream = file.createWriteStream({
+            metadata: {
+              contentType: 'audio/wav'
+            }
           })
-          stream.on('finish', () => {
-            resolve()
-          })
-          stream.end(buffer)
-        }))
-        request.audio.uri = `gs://${googleBucketName}/${gcsFileName}`
-        debug(`Google Cloud uploaded file to storage: ${request.audio.uri}`)
+          await (new Promise((resolve, reject) => {
+            stream.on('error', (err) => {
+              reject(err)
+            })
+            stream.on('finish', () => {
+              resolve()
+            })
+            stream.end(buffer)
+          }))
+          request.audio.uri = `gs://${googleBucketName}/${gcsFileName}`
+        } catch (err) {
+          debug(err)
+          throw new Error(`Google Cloud Upload failed: ${err.message}`)
+        }
+      } else {
+        request.audio.content = buffer.toString('base64')
+      }
+      try {
+        const [operation] = await speechClient.longRunningRecognize(request)
+        const [response] = await operation.promise()
+        const transcription = response.results.map(result => result.alternatives[0].transcript).join('\n')
+        return {
+          text: transcription,
+          debug: response
+        }
       } catch (err) {
         debug(err)
-        throw new Error(`Google Cloud Upload failed: ${err.message}`)
-      }
-    } else {
-      request.audio.content = buffer.toString('base64')
-    }
-    try {
-      const [operation, initialApiResponse] = await speechClient.longRunningRecognize(request)
-      debug(`Google Cloud initialApiResponse: ${JSON.stringify(initialApiResponse, null, 2)}`)
-      // eslint-disable-next-line no-unused-vars
-      const [response, metadata, finalApiResponse] = await operation.promise()
-      debug(`Google Cloud response: ${JSON.stringify(response, null, 2)}`)
-      const transcription = response.results.map(result => result.alternatives[0].transcript).join('\n')
-      return {
-        text: transcription,
-        debug: response
-      }
-    } catch (err) {
-      debug(err)
-      throw new Error(`Google Cloud STT failed: ${err.message}`)
-    } finally {
-      if (googleBucketName) {
-        const bucket = storageClient.bucket(googleBucketName)
-        const file = bucket.file(gcsFileName)
-        try {
-          await file.delete()
-          debug(`Google Cloud deleted file: ${gcsFileName}`)
-        } catch (err) {
-          console.log(`Google Cloud cleanup failed for file ${gcsFileName}, please remove manually`)
-          debug(err)
+        throw new Error(`Google Cloud STT failed: ${err.message}`)
+      } finally {
+        if (googleBucketName) {
+          const bucket = storageClient.bucket(googleBucketName)
+          const file = bucket.file(gcsFileName)
+          try {
+            await file.delete()
+          } catch (err) {
+            console.log(`Google Cloud cleanup failed for file ${gcsFileName}, please remove manually`)
+            debug(err)
+          }
         }
       }
-    }
+    })
   }
 }
 
