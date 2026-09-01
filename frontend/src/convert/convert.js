@@ -1,4 +1,5 @@
 const fs = require('fs')
+const path = require('path')
 const Mustache = require('mustache')
 const { v1: uuidv1 } = require('uuid')
 const { runShellCommand, getSoxFileType, isBufferMP3, getAudioLengthSeconds } = require('../soxi')
@@ -52,7 +53,8 @@ const runconvert = async (cmdLine, outputName, { inputBuffer, inputType, start, 
   }
   const output = `${process.env.BOTIUM_SPEECH_TMP_DIR || '/tmp'}/${jobId}_${outputName}`
 
-  let cmdLineFull = Mustache.render(cmdLine, { output, input, inputtype })
+  const soundsdir = process.env.BOTIUM_SPEECH_SOUNDS_DIR || path.resolve(process.cwd(), 'resources/sounds')
+  let cmdLineFull = Mustache.render(cmdLine, { output, input, inputtype, soundsdir })
   if (start && end) {
     cmdLineFull = `${cmdLineFull} trim ${start} ${end}`
   } else if (start && !end) {
