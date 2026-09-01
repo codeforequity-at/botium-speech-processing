@@ -21,9 +21,11 @@ RUN arch="$(dpkg --print-architecture)" \
   && node --version && npm --version
 
 WORKDIR /app
+ENV BOTIUM_SPEECH_SOUNDS_DIR=/app/sounds
 COPY ./package.json /app/package.json
 RUN npm install --omit=optional --omit=dev --legacy-peer-deps
 COPY . /app
+RUN mv /app/resources/sounds /app/sounds
 COPY ./resources/.env /app/.env
 RUN find . -type f ! -path '*/node_modules/*' -print0 | xargs -0 dos2unix
 

@@ -3,3 +3,4 @@ node_modules
 resources/.cache
 resources/.tmp
 resources/google.json
+resources/sounds/source/
