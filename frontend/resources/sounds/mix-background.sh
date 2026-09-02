@@ -23,11 +23,14 @@ repeat_count=$(awk -v input="$input_duration" -v background="$background_duratio
   print (copies > 0 ? copies - 1 : 0)
 }')
 
-background_repeated_path=$(mktemp /tmp/botium-background-repeat.XXXXXX.wav)
-background_mix_path=$(mktemp /tmp/botium-background-mix.XXXXXX.wav)
+# Keep all temporary files next to the output. In production only the resources
+# volume is writable, while the container root filesystem (including /tmp) is read-only.
+output_dir=$(dirname "$output_path")
+background_repeated_path=$(mktemp "$output_dir/botium-background-repeat.XXXXXX.wav")
+background_mix_path=$(mktemp "$output_dir/botium-background-mix.XXXXXX.wav")
 trap 'rm -f "$background_repeated_path" "$background_mix_path"' EXIT HUP INT TERM
 
-sox "$background_path" "$background_repeated_path" repeat "$repeat_count"
+sox --temp "$output_dir" "$background_path" "$background_repeated_path" repeat "$repeat_count"
 sox "$background_repeated_path" -r "$input_rate" -c "$input_channels" \
   "$background_mix_path" trim 0 "$input_duration"
 

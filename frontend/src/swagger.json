@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Botium Speech Processing API",
-    "version": "1.5.1",
+    "version": "1.8.2",
     "description": "Botium Speech Processing API.\n\nOptional **sessionId** (query `sessionId`, header `x-session-id` or `x-botium-session-id`, or JSON field `sessionId` when the body is JSON) is echoed in structured debug logs from speech providers when `DEBUG` is enabled for the corresponding namespaces."
   },
   "basePath": "/",
