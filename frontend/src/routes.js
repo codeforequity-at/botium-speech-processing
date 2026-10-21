@@ -89,6 +89,26 @@ const _addContentDurationHeadersForFile = async (name, filenameOrBuffer, headers
   }
 }
 
+const contentTypeForName = (name) => {
+  const types = {
+    '.wav': 'audio/wav',
+    '.mp3': 'audio/mpeg',
+    '.ogg': 'audio/ogg',
+    '.flac': 'audio/flac',
+    '.webm': 'audio/webm'
+  }
+  return types[path.extname(name || '').toLowerCase()] || 'application/octet-stream'
+}
+
+const audioHeaders = (name, length) => {
+  return {
+    'Content-Type': contentTypeForName(name),
+    'X-Content-Type-Options': 'nosniff',
+    'Content-disposition': contentDisposition(name || 'audio'),
+    'Content-Length': length
+  }
+}
+
 const _addContentDurationHeaders = (outputDuration, headers = {}) => {
   if (outputDuration >= 0) {
     headers['Content-Duration'] = outputDuration.toFixed(0)
@@ -467,10 +487,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
             const name = fs.readFileSync(cacheFileName).toString()
             const buffer = fs.readFileSync(cacheFileBuffer)
             debug(`Reading tts result ${cacheFileName} from cache: ${name}`)
-            const headers = {
-              'Content-disposition': `${contentDisposition(name)}`,
-              'Content-Length': buffer.length
-            }
+            const headers = audioHeaders(name, buffer.length)
             await _addContentDurationHeadersForFile(name, cacheFileBuffer, headers)
             res.writeHead(200, headers)
             return res.end(buffer)
@@ -493,10 +510,7 @@ router.post('/api/stt/:language', async (req, res, next) => {
         voice: req.query.voice,
         text: req.query.text
       })
-      const headers = {
-        'Content-disposition': `${contentDisposition(name)}`,
-        'Content-Length': buffer.length
-      }
+      const headers = audioHeaders(name, buffer.length)
       await _addContentDurationHeadersForFile(name, buffer, headers)
       res.writeHead(200, headers)
       res.end(buffer)
@@ -805,10 +819,7 @@ router.post('/api/convert/:profile', async (req, res, next) => {
     const { outputName, outputBuffer, outputDuration } = await withApiCallLog('botium-speech-processing-convert', req, 'convert', 'runconvert', { profile: req.params.profile, inputBytes: buffer.length, start: req.query.start, end: req.query.end }, async () => {
       return runconvert(process.env[envVarCmd], process.env[envVarOutput], { inputBuffer: buffer, start: req.query.start, end: req.query.end })
     })
-    const headers = {
-      'Content-disposition': `attachment; filename="${outputName}"`,
-      'Content-Length': outputBuffer.length
-    }
+    const headers = audioHeaders(outputName, outputBuffer.length)
     _addContentDurationHeaders(outputDuration, headers)
     res.writeHead(200, headers)
     res.end(outputBuffer)
@@ -900,10 +911,7 @@ router.post('/api/convert', async (req, res, next) => {
       return next(err)
     }
   }
-  const headers = {
-    'Content-disposition': `attachment; filename="${transformName}"`,
-    'Content-Length': transformBuffer.length
-  }
+  const headers = audioHeaders(transformName, transformBuffer.length)
   _addContentDurationHeaders(transformDuration, headers)
   res.writeHead(200, headers)
   res.end(transformBuffer)

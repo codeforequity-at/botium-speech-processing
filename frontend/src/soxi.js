@@ -1,5 +1,15 @@
-const { spawn, exec } = require('child_process')
+const { spawn, execFile } = require('child_process')
 const debug = require('debug')('botium-speech-processing-soxi')
+
+const soxi = (args) => {
+  return new Promise((resolve, reject) => {
+    execFile('soxi', args, (err, stdout, stderr) => {
+      if (err) return reject(err)
+      if (stderr && stderr.trim()) return reject(new Error(stderr.trim()))
+      resolve(stdout.trim())
+    })
+  })
+}
 
 const runShellCommand = (cmdLineFull, inputBuffer = null) => {
   return new Promise((resolve, reject) => {
@@ -56,47 +66,65 @@ const runShellCommand = (cmdLineFull, inputBuffer = null) => {
 }
 
 const getSoxFileType = (filename) => {
+  return soxi(['-t', filename])
+}
+
+const readSoXiDuration = (args, inputBuffer = null) => {
   return new Promise((resolve, reject) => {
-    exec(`soxi -t ${filename}`, (err, stdout, stderr) => {
-      if (err) return reject(err)
-      if (stderr) return reject(stderr.trim())
-      resolve(stdout.trim())
+    const childProcess = spawn('soxi', args)
+    const childProcessOutput = []
+    const childProcessErr = []
+
+    let settled = false
+    const finish = (err, value) => {
+      if (settled) return
+      settled = true
+      if (err) reject(err)
+      else resolve(value)
+    }
+
+    childProcess.once('error', (err) => {
+      finish(err)
     })
+    childProcess.stdin.on('error', (err) => {
+      debug('stdin err ' + err)
+    })
+    childProcess.stdout.on('data', (data) => {
+      childProcessOutput.push(`${data}`)
+    })
+    childProcess.stderr.on('data', (data) => {
+      childProcessErr.push(`${data}`)
+    })
+    childProcess.once('exit', (code) => {
+      if (code !== 0) {
+        finish(new Error(childProcessErr.join('').trim() || `soxi exited with code ${code}`))
+        return
+      }
+      const out = childProcessOutput.join('').trim()
+      const duration = parseFloat(out)
+      if (!out || Number.isNaN(duration)) {
+        finish(new Error(`Parsing SOXI output "${out}" failed`))
+        return
+      }
+      finish(null, duration)
+    })
+
+    try {
+      if (inputBuffer) {
+        childProcess.stdin.write(inputBuffer)
+      }
+      childProcess.stdin.end()
+    } catch (err) {
+      debug('stdin write err ' + err)
+    }
   })
 }
 
 const getAudioLengthSeconds = (filenameOrBuffer) => {
   if (Buffer.isBuffer(filenameOrBuffer)) {
-    return runShellCommand('soxi -D -', filenameOrBuffer)
-      .then(({ childProcessOutput }) => {
-        if (childProcessOutput.length > 0) {
-          const out = childProcessOutput[0].trim()
-          try {
-            return parseFloat(out)
-          } catch (err) {
-            throw new Error(`Parsing SOXI output "${out}" failed: ${err.message}`)
-          }
-        } else {
-          throw new Error('output empty')
-        }
-      })
-      .catch((err) => {
-        throw new Error(`Parsing SOXI output failed: ${err.message}`)
-      })
-  } else {
-    return new Promise((resolve, reject) => {
-      exec(`soxi -D ${filenameOrBuffer}`, (err, stdout, stderr) => {
-        if (err) return reject(err)
-        if (stderr) return reject(stderr.trim())
-        const out = stdout.trim()
-        try {
-          return resolve(parseFloat(out))
-        } catch (err) {
-          return reject(new Error(`Parsing SOXI output "${out}" failed: ${err.message}`))
-        }
-      })
-    })
+    return readSoXiDuration(['-D', '-'], filenameOrBuffer)
   }
+  return readSoXiDuration(['-D', filenameOrBuffer])
 }
 
 const isBufferMP3 = (buf) => {
