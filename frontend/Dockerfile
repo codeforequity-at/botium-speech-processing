@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-ARG NODE_VERSION=20.19.4
+ARG NODE_VERSION=22.23.4
 
 # One apt-get update for all distro packages (second RUN would re-fetch lists for little gain).
 RUN apt-get update \
