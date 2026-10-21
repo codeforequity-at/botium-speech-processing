@@ -2,20 +2,19 @@ const _ = require('lodash')
 const { v1: uuidv1 } = require('uuid')
 const speech = process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION ? require('@google-cloud/speech')[process.env.BOTIUM_SPEECH_GOOGLE_API_VERSION] : require('@google-cloud/speech').v1p1beta1
 const storage = require('@google-cloud/storage')
-const request = require('request-promise-native')
 const cheerio = require('cheerio')
 const { PassThrough } = require('stream')
 const EventEmitter = require('events')
 
 const debug = require('debug')('botium-speech-processing-google-stt')
 
-const { googleOptions } = require('../utils')
+const { googleOptions, httpRequest } = require('../utils')
 const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const GOOGLE_STT_LANGUAGES_URL = 'https://cloud.google.com/speech-to-text/docs/languages'
 const downloadLanguageCodes = async () => {
   debug(`Downloading language codes from ${GOOGLE_STT_LANGUAGES_URL}`)
-  const htmlString = await request(GOOGLE_STT_LANGUAGES_URL)
+  const htmlString = await httpRequest(GOOGLE_STT_LANGUAGES_URL)
   const $ = cheerio.load(htmlString)
 
   const languageCodes = []

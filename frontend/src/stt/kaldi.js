@@ -1,10 +1,10 @@
 const util = require('util')
 const _ = require('lodash')
 const Mustache = require('mustache')
-const request = require('request-promise-native')
 const { WebSocket } = require('ws')
 const EventEmitter = require('events')
 const debug = require('debug')('botium-speech-processing-kaldi')
+const { httpRequest } = require('../utils')
 const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const getKaldiUrl = (language) => {
@@ -128,7 +128,7 @@ class KaldiSTT {
 
       let response
       try {
-        response = await request(requestOptions)
+        response = await httpRequest(requestOptions)
       } catch (err) {
         throw new Error(`Calling url ${requestOptions.uri} failed: ${err.message}`)
       }

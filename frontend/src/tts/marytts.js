@@ -1,8 +1,7 @@
 const _ = require('lodash')
-const request = require('request-promise-native')
 const debug = require('debug')('botium-speech-processing-marytts')
 
-const { ttsFilename } = require('../utils')
+const { ttsFilename, httpRequest } = require('../utils')
 const { withApiCallLog } = require('../apiCallLog')
 
 let maryVoices = null
@@ -18,7 +17,7 @@ class MaryTTS {
     }
     let response
     try {
-      response = await request(requestOptions)
+      response = await httpRequest(requestOptions)
     } catch (err) {
       throw new Error(`Calling url ${requestOptions.uri} failed: ${err.message}`)
     }
@@ -67,7 +66,7 @@ class MaryTTS {
     }
     let response
     try {
-      response = await request(requestOptions)
+      response = await httpRequest(requestOptions)
     } catch (err) {
       throw new Error(`Calling url ${requestOptions.uri} failed: ${err.message}`)
     }

@@ -1,17 +1,16 @@
 const _ = require('lodash')
-const request = require('request-promise-native')
 const cheerio = require('cheerio')
 const EventEmitter = require('events')
 const { ResultReason, AudioInputStream, AudioStreamFormat, AudioConfig, SpeechRecognizer, PhraseListGrammar, OutputFormat } = require('microsoft-cognitiveservices-speech-sdk')
 const debug = require('debug')('botium-speech-processing-azure')
 
-const { azureSpeechConfig, applyExtraAzureSpeechConfig, getAzureErrorDetails } = require('../utils')
+const { azureSpeechConfig, applyExtraAzureSpeechConfig, getAzureErrorDetails, httpRequest } = require('../utils')
 const { withApiCallLog, logLine, summarizeForLog } = require('../apiCallLog')
 
 const AZURE_STT_LANGUAGES_URL = 'https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support'
 const downloadLanguageCodes = async () => {
   debug(`Downloading language codes from ${AZURE_STT_LANGUAGES_URL}`)
-  const htmlString = await request(AZURE_STT_LANGUAGES_URL)
+  const htmlString = await httpRequest(AZURE_STT_LANGUAGES_URL)
   const $ = cheerio.load(htmlString)
 
   const languageCodes = []

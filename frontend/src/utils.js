@@ -209,6 +209,29 @@ const deepgramOptions = (req) => {
   throw new Error('Deepgram API key not found')
 }
 
+const httpRequest = async (urlOrOptions) => {
+  const options = _.isString(urlOrOptions) ? { uri: urlOrOptions } : urlOrOptions
+  const method = options.method || 'GET'
+  const init = { method }
+  if (options.body != null) init.body = options.body
+
+  const response = await fetch(options.uri, init)
+  if (options.simple !== false && !response.ok) {
+    throw new Error(`${response.status} - ${response.statusText}`)
+  }
+  const body = options.encoding === null
+    ? Buffer.from(await response.arrayBuffer())
+    : await response.text()
+  if (options.resolveWithFullResponse) {
+    return {
+      statusCode: response.status,
+      statusMessage: response.statusText,
+      body
+    }
+  }
+  return body
+}
+
 module.exports = {
   asJson,
   enumValueToName,
@@ -224,5 +247,6 @@ module.exports = {
   getAzureErrorDetails,
   readBaseUrls,
   applyIfExists,
-  deepgramOptions
+  deepgramOptions,
+  httpRequest
 }
